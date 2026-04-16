@@ -21,7 +21,10 @@ class DeprecationError(Exception):
 
 def _deprecated_function_for(old_function_name, function):
     @functools.wraps(function)
-    pass
+    def wrapper(*args, **kwargs):
+        pass
+
+    return wrapper
 
 
 def _deprecate_kwarg(kwargs, old_kw, new_kw, new_kw_value):
