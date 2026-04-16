@@ -41,7 +41,7 @@ class AdditiveStructureKernel(Kernel):
         """
         Kernel is stationary if the base kernel is stationary.
         """
-        return self.base_kernel.is_stationary
+        pass
 
     def __init__(
         self,
@@ -60,15 +60,10 @@ class AdditiveStructureKernel(Kernel):
         self.num_dims = num_dims
 
     def forward(self, x1, x2, diag=False, last_dim_is_batch=False, **params):
-        if last_dim_is_batch:
-            raise RuntimeError("AdditiveStructureKernel does not accept the last_dim_is_batch argument.")
-
-        res = self.base_kernel(x1, x2, diag=diag, last_dim_is_batch=True, **params)
-        res = res.sum(-2 if diag else -3)
-        return res
+        pass
 
     def prediction_strategy(self, train_inputs, train_prior_dist, train_labels, likelihood):
         return self.base_kernel.prediction_strategy(train_inputs, train_prior_dist, train_labels, likelihood)
 
     def num_outputs_per_input(self, x1, x2):
-        return self.base_kernel.num_outputs_per_input(x1, x2)
+        pass

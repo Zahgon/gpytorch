@@ -64,11 +64,11 @@ class StudentTLikelihood(_OneDimensionalLikelihood):
 
     @property
     def deg_free(self) -> Tensor:
-        return self.raw_deg_free_constraint.transform(self.raw_deg_free)
+        pass
 
     @deg_free.setter
     def deg_free(self, value: Tensor) -> None:
-        self._set_deg_free(value)
+        pass
 
     def _set_deg_free(self, value: Tensor) -> None:
         if not torch.is_tensor(value):
@@ -77,11 +77,11 @@ class StudentTLikelihood(_OneDimensionalLikelihood):
 
     @property
     def noise(self) -> Tensor:
-        return self.raw_noise_constraint.transform(self.raw_noise)
+        pass
 
     @noise.setter
     def noise(self, value: Tensor) -> None:
-        self._set_noise(value)
+        pass
 
     def _set_noise(self, value: Tensor) -> None:
         if not torch.is_tensor(value):
@@ -89,4 +89,4 @@ class StudentTLikelihood(_OneDimensionalLikelihood):
         self.initialize(raw_noise=self.raw_noise_constraint.inverse_transform(value))
 
     def forward(self, function_samples: Tensor, *args: Any, **kwargs: Any) -> StudentT:
-        return base_distributions.StudentT(df=self.deg_free, loc=function_samples, scale=self.noise.sqrt())
+        pass

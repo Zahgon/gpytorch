@@ -31,15 +31,13 @@ class IndependentModelList(AbstractModelList):
         self.likelihood = LikelihoodList(*[m.likelihood for m in models])
 
     def forward_i(self, i, *args, **kwargs):
-        return self.models[i].forward(*args, **kwargs)
+        pass
 
     def likelihood_i(self, i, *args, **kwargs):
-        return self.likelihood.likelihoods[i](*args, **kwargs)
+        pass
 
     def forward(self, *args, **kwargs):
-        return [
-            model.forward(*args_, **kwargs) for model, args_ in zip(self.models, _get_tensor_args(*args), strict=True)
-        ]
+        pass
 
     def get_fantasy_model(self, inputs, targets, **kwargs):
         """
@@ -56,24 +54,7 @@ class IndependentModelList(AbstractModelList):
             An `IndependentModelList` model, where each sub-model is the fantasy model of the respective
             sub-model in the original model at the corresponding input locations / labels.
         """
-
-        if "noise" in kwargs:
-            noise = kwargs.pop("noise")
-            kwargs = [{**kwargs, "noise": noise_} if noise_ is not None else kwargs for noise_ in noise]
-        else:
-            kwargs = [kwargs] * len(inputs)
-
-        fantasy_models = [
-            model.get_fantasy_model(*inputs_, *targets_, **kwargs_)
-            for model, inputs_, targets_, kwargs_ in zip(
-                self.models,
-                _get_tensor_args(*inputs),
-                _get_tensor_args(*targets),
-                kwargs,
-                strict=True,
-            )
-        ]
-        return self.__class__(*fantasy_models)
+        pass
 
     def __call__(self, *args, **kwargs):
         return [
@@ -82,16 +63,12 @@ class IndependentModelList(AbstractModelList):
 
     @property
     def train_inputs(self):
-        return [model.train_inputs for model in self.models]
+        pass
 
     @property
     def train_targets(self):
-        return [model.train_targets for model in self.models]
+        pass
 
 
 def _get_tensor_args(*args):
-    for arg in args:
-        if torch.is_tensor(arg):
-            yield (arg,)
-        else:
-            yield arg
+    pass

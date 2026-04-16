@@ -35,10 +35,4 @@ class NGD(torch.optim.Optimizer):
         (Note that the :attr:`closure` argument is not used by this optimizer; it is simply included to be
         compatible with the PyTorch optimizer API.)
         """
-        for group in self.param_groups:
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
-                p.add_(p.grad, alpha=(-group["lr"] * self.num_data))
-
-        return None
+        pass

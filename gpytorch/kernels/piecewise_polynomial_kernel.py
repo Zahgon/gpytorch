@@ -9,23 +9,11 @@ from .kernel import Kernel
 
 
 def _fmax(r: Tensor, j: int, q: int) -> Tensor:
-    return torch.max(torch.tensor(0.0, dtype=r.dtype, device=r.device), 1 - r).pow(j + q)
+    pass
 
 
 def _get_cov(r: Tensor, j: int, q: int) -> Tensor:
-    if q == 0:
-        return 1
-    if q == 1:
-        return (j + 1) * r + 1
-    if q == 2:
-        return 1 + (j + 2) * r + ((j + 4 * j + 3) / 3.0) * (r**2)
-    if q == 3:
-        return (
-            1
-            + (j + 3) * r
-            + ((6 * j**2 + 36 * j + 45) / 15.0) * r.square()
-            + ((j**3 + 9 * j**2 + 23 * j + 15) / 15.0) * (r**3)
-        )
+    pass
 
 
 class PiecewisePolynomialKernel(Kernel):
@@ -102,20 +90,4 @@ class PiecewisePolynomialKernel(Kernel):
         self.q = q
 
     def forward(self, x1: Tensor, x2: Tensor, last_dim_is_batch: bool = False, diag: bool = False, **params) -> Tensor:
-        x1_ = x1.div(self.lengthscale)
-        x2_ = x2.div(self.lengthscale)
-        if last_dim_is_batch is True:
-            D = x1.shape[1]
-        else:
-            D = x1.shape[-1]
-        j = math.floor(D / 2.0) + self.q + 1
-        if last_dim_is_batch and diag:
-            r = self.covar_dist(x1_, x2_, last_dim_is_batch=True, diag=True)
-        elif diag:
-            r = self.covar_dist(x1_, x2_, diag=True)
-        elif last_dim_is_batch:
-            r = self.covar_dist(x1_, x2_, last_dim_is_batch=True)
-        else:
-            r = self.covar_dist(x1_, x2_)
-        cov_matrix = _fmax(r, j, self.q) * _get_cov(r, j, self.q)
-        return cov_matrix
+        pass

@@ -40,7 +40,7 @@ def add_diagonal(input: Anysor, diag: Tensor) -> LinearOperator:
     :return: :math:`\mathbf A + \text{diag}(\mathbf d)`, where :math:`\mathbf A` is the linear operator
         and :math:`\mathbf d` is the diagonal component
     """
-    return linear_operator.add_diagonal(input=input, diag=diag)
+    pass
 
 
 def add_jitter(input: Anysor, jitter_val: float = 1e-3) -> Anysor:
@@ -55,7 +55,7 @@ def add_jitter(input: Anysor, jitter_val: float = 1e-3) -> Anysor:
     :return: :math:`\mathbf A + \alpha (\mathbf I)`, where :math:`\mathbf A` is the linear operator
         and :math:`\alpha` is :attr:`jitter_val`.
     """
-    return linear_operator.add_jitter(input=input, jitter_val=jitter_val)
+    pass
 
 
 def diagonalization(input: Anysor, method: str | None = None) -> tuple[Tensor, Tensor]:
@@ -70,7 +70,7 @@ def diagonalization(input: Anysor, method: str | None = None) -> tuple[Tensor, T
         based on size if not specified.
     :return: eigenvalues and eigenvectors representing the diagonalization.
     """
-    return linear_operator.diagonalization(input=input, method=method)
+    pass
 
 
 def dsmm(
@@ -85,7 +85,7 @@ def dsmm(
     :param dense_mat: Dense matrix :math:`\mathbf D` (... x N x O)
     :return: :math:`\mathbf S \mathbf D` (... x M x N)
     """
-    return linear_operator.dsmm(sparse_mat=sparse_mat, dense_mat=dense_mat)
+    pass
 
 
 def inv_quad(input: Anysor, inv_quad_rhs: Tensor, reduce_inv_quad: bool = True) -> Tensor:
@@ -112,7 +112,7 @@ def inv_quad(input: Anysor, inv_quad_rhs: Tensor, reduce_inv_quad: bool = True) 
     :returns: The inverse quadratic term.
         If `reduce_inv_quad=True`, the inverse quadratic term is of shape (...). Otherwise, it is (... x M).
     """
-    return linear_operator.inv_quad(input=input, inv_quad_rhs=inv_quad_rhs, reduce_inv_quad=reduce_inv_quad)
+    pass
 
 
 def inv_quad_logdet(
@@ -170,7 +170,7 @@ def pivoted_cholesky(
     .. _Harbrecht et al., 2012:
         https://www.sciencedirect.com/science/article/pii/S0168927411001814
     """
-    return linear_operator.pivoted_cholesky(input=input, rank=rank, return_pivots=return_pivots)
+    pass
 
 
 def root_decomposition(input: Anysor, method: str | None = None) -> LinearOperator:
@@ -185,7 +185,7 @@ def root_decomposition(input: Anysor, method: str | None = None) -> LinearOperat
         "cholesky", "lanczos", "symeig", "pivoted_cholesky", or "svd".
     :return: A tensor :math:`\mathbf R` such that :math:`\mathbf R \mathbf R^\top \approx \mathbf A`.
     """
-    return linear_operator.root_decomposition(input=input, method=method)
+    pass
 
 
 def root_inv_decomposition(
@@ -209,12 +209,7 @@ def root_inv_decomposition(
     :param method: Root decomposition method to use (symeig, diagonalization, lanczos, or cholesky).
     :return: A tensor :math:`\mathbf R` such that :math:`\mathbf R \mathbf R^\top \approx \mathbf A^{-1}`.
     """
-    return linear_operator.root_inv_decomposition(
-        input=input,
-        initial_vectors=initial_vectors,
-        test_vectors=test_vectors,
-        method=method,
-    )
+    pass
 
 
 def solve(input: Anysor, rhs: Tensor, lhs: Tensor | None = None) -> Tensor:
@@ -275,7 +270,7 @@ def sqrt_inv_matmul(input: Anysor, rhs: Tensor, lhs: Tensor | None = None) -> Te
     :param lhs: :math:`\mathbf L` - the left hand side
     :return: :math:`\mathbf A^{-1/2} \mathbf R` or :math:`\mathbf L \mathbf A^{-1/2} \mathbf R`.
     """
-    return linear_operator.sqrt_inv_matmul(input=input, rhs=rhs, lhs=lhs)
+    pass
 
 
 # Read version number as written by setuptools_scm

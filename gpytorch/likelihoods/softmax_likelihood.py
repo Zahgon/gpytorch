@@ -58,27 +58,7 @@ class SoftmaxLikelihood(Likelihood):
             self.mixing_weights: torch.nn.Parameter | None = None
 
     def forward(self, function_samples: Tensor, *params: Any, **kwargs: Any) -> Categorical:
-        num_data, num_features = function_samples.shape[-2:]
-
-        # Catch legacy mode
-        if num_data == self.num_features:
-            warnings.warn(
-                "The input to SoftmaxLikelihood should be a MultitaskMultivariateNormal (num_data x num_tasks). "
-                "Batch MultivariateNormal inputs (num_tasks x num_data) will be deprectated.",
-                DeprecationWarning,
-            )
-            function_samples = function_samples.transpose(-1, -2)
-            num_data, num_features = function_samples.shape[-2:]
-
-        if num_features != self.num_features:
-            raise RuntimeError("There should be %d features" % self.num_features)
-
-        if self.mixing_weights is not None:
-            mixed_fs = function_samples @ self.mixing_weights.t()  # num_classes x num_data
-        else:
-            mixed_fs = function_samples
-        res = base_distributions.Categorical(logits=mixed_fs)
-        return res
+        pass
 
     def __call__(self, input: Tensor | MultitaskMultivariateNormal, *args: Any, **kwargs: Any) -> Distribution:
         if isinstance(input, Distribution) and not isinstance(input, MultitaskMultivariateNormal):

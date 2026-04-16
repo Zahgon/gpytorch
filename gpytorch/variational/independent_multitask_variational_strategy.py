@@ -39,15 +39,15 @@ class IndependentMultitaskVariationalStrategy(_VariationalStrategy):
 
     @property
     def prior_distribution(self):
-        return self.base_variational_strategy.prior_distribution
+        pass
 
     @property
     def variational_distribution(self):
-        return self.base_variational_strategy.variational_distribution
+        pass
 
     @property
     def variational_params_initialized(self):
-        return self.base_variational_strategy.variational_params_initialized
+        pass
 
     def kl_divergence(self):
         return super().kl_divergence().sum(dim=-1)

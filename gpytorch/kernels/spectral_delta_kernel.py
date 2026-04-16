@@ -81,59 +81,18 @@ class SpectralDeltaKernel(Kernel):
         self.Z = inv_spec
 
     def initialize_from_data_simple(self, train_x, train_y, **kwargs):
-        if not torch.is_tensor(train_x) or not torch.is_tensor(train_y):
-            raise RuntimeError("train_x and train_y should be tensors")
-        if train_x.ndimension() == 1:
-            train_x = train_x.unsqueeze(-1)
-        if train_x.ndimension() == 2:
-            train_x = train_x.unsqueeze(0)
-
-        train_x_sort = train_x.sort(1)[0]
-        min_dist_sort = (train_x_sort[:, 1:, :] - train_x_sort[:, :-1, :]).squeeze(0)
-        ard_num_dims = 1 if self.ard_num_dims is None else self.ard_num_dims
-        min_dist = torch.zeros(1, ard_num_dims, dtype=self.Z.dtype, device=self.Z.device)
-        for ind in range(ard_num_dims):
-            min_dist[:, ind] = min_dist_sort[(torch.nonzero(min_dist_sort[:, ind]))[0], ind]
-
-        z_init = torch.rand_like(self.Z).mul_(0.5).div_(min_dist)
-
-        self.Z = z_init
+        pass
 
     @property
     def Z(self):
-        return self.raw_Z_constraint.transform(self.raw_Z)
+        pass
 
     @Z.setter
     def Z(self, value):
-        self._set_Z(value)
+        pass
 
     def _set_Z(self, value):
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(self.raw_Z)
-        self.initialize(raw_Z=self.raw_Z_constraint.inverse_transform(value))
+        pass
 
     def forward(self, x1, x2, diag=False, **params):
-        x1_ = x1.div(self.lengthscale)
-        x2_ = x2.div(self.lengthscale)
-
-        Z = self.Z
-
-        # Z1_ and Z2_ are s x d
-        x1z1 = x1_.matmul(Z.transpose(-2, -1))  # n x s
-        x2z2 = x2_.matmul(Z.transpose(-2, -1))  # n x s
-
-        x1z1 = x1z1 * 2 * math.pi
-        x2z2 = x2z2 * 2 * math.pi
-
-        x1z1 = torch.cat([x1z1.cos(), x1z1.sin()], dim=-1) / math.sqrt(x1z1.size(-1))
-        x2z2 = torch.cat([x2z2.cos(), x2z2.sin()], dim=-1) / math.sqrt(x2z2.size(-1))
-
-        if x1.size() == x2.size() and torch.equal(x1, x2):
-            prod = RootLinearOperator(x1z1)
-        else:
-            prod = MatmulLinearOperator(x1z1, x2z2.transpose(-2, -1))
-
-        if diag:
-            return prod.diagonal(dim1=-1, dim2=-2)
-        else:
-            return prod
+        pass

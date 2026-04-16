@@ -59,11 +59,11 @@ class BetaLikelihood(_OneDimensionalLikelihood):
 
     @property
     def scale(self) -> Tensor:
-        return self.raw_scale_constraint.transform(self.raw_scale)
+        pass
 
     @scale.setter
     def scale(self, value: Tensor) -> None:
-        self._set_scale(value)
+        pass
 
     def _set_scale(self, value: Tensor) -> None:
         if not torch.is_tensor(value):
@@ -71,8 +71,4 @@ class BetaLikelihood(_OneDimensionalLikelihood):
         self.initialize(raw_scale=self.raw_scale_constraint.inverse_transform(value))
 
     def forward(self, function_samples: Tensor, *args: Any, **kwargs: Any) -> Beta:
-        mixture = torch.sigmoid(function_samples)
-        scale = self.scale
-        alpha = mixture * scale + 1
-        beta = scale - alpha + 2
-        return base_distributions.Beta(concentration1=alpha, concentration0=beta)
+        pass

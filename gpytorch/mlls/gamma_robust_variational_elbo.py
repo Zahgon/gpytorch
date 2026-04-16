@@ -74,34 +74,4 @@ class GammaRobustVariationalELBO(_ApproximateMarginalLogLikelihood):
         self.gamma = gamma
 
     def _log_likelihood_term(self, variational_dist_f, target, *args, **kwargs):
-        shifted_gamma = self.gamma - 1
-
-        muf, varf = variational_dist_f.mean, variational_dist_f.variance
-
-        # Get noise from likelihood
-        noise = self.likelihood._shaped_noise_covar(muf.shape, *args, **kwargs).diagonal(dim1=-1, dim2=-2)
-        # Potentially reshape the noise to deal with the multitask case
-        noise = noise.view(*noise.shape[:-1], *variational_dist_f.event_shape)
-
-        # adapted from https://github.com/JeremiasKnoblauch/GVIPublic/
-        mut = shifted_gamma * target / noise + muf / varf
-        sigmat = 1.0 / (shifted_gamma / noise + 1.0 / varf)
-        log_integral = -0.5 * shifted_gamma * torch.log(2.0 * math.pi * noise) - 0.5 * np.log1p(shifted_gamma)
-        log_tempered = (
-            -math.log(shifted_gamma)
-            - 0.5 * shifted_gamma * torch.log(2.0 * math.pi * noise)
-            - 0.5 * torch.log1p(shifted_gamma * varf / noise)
-            - 0.5 * (shifted_gamma * target.pow(2.0) / noise)
-            - 0.5 * muf.pow(2.0) / varf
-            + 0.5 * mut.pow(2.0) * sigmat
-        )
-
-        factor = log_tempered + shifted_gamma / self.gamma * log_integral
-        factor = self.gamma * factor.exp()
-
-        # Do appropriate summation for multitask Gaussian likelihoods
-        num_event_dim = len(variational_dist_f.event_shape)
-        if num_event_dim > 1:
-            factor = factor.sum(list(range(-1, -num_event_dim, -1)))
-
-        return factor.sum(-1)
+        pass

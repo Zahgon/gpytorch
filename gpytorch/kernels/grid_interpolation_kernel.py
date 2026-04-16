@@ -123,91 +123,17 @@ class GridInterpolationKernel(GridKernel):
 
     @property
     def _tight_grid_bounds(self):
-        grid_spacings = tuple((bound[1] - bound[0]) / self.grid_sizes[i] for i, bound in enumerate(self.grid_bounds))
-        return tuple(
-            (bound[0] + 2.01 * spacing, bound[1] - 2.01 * spacing)
-            for bound, spacing in zip(self.grid_bounds, grid_spacings)
-        )
+        pass
 
     def _compute_grid(self, inputs, last_dim_is_batch=False):
-        n_data, n_dimensions = inputs.size(-2), inputs.size(-1)
-        if last_dim_is_batch:
-            inputs = inputs.transpose(-1, -2).unsqueeze(-1)
-            n_dimensions = 1
-        batch_shape = inputs.shape[:-2]
-
-        inputs = inputs.reshape(-1, n_dimensions)
-        interp_indices, interp_values = Interpolation().interpolate(self.grid, inputs)
-        interp_indices = interp_indices.view(*batch_shape, n_data, -1)
-        interp_values = interp_values.view(*batch_shape, n_data, -1)
-        return interp_indices, interp_values
+        pass
 
     def _inducing_forward(self, last_dim_is_batch, **params):
-        return super().forward(self.grid, self.grid, last_dim_is_batch=last_dim_is_batch, **params)
+        pass
 
     def forward(self, x1, x2, diag=False, last_dim_is_batch=False, **params):
         # See if we need to update the grid or not
-        if self.grid_is_dynamic:  # This is true if a grid_bounds wasn't passed in
-            if torch.equal(x1, x2):
-                x = x1.reshape(-1, self.num_dims)
-            else:
-                x = torch.cat([x1.reshape(-1, self.num_dims), x2.reshape(-1, self.num_dims)])
-            x_maxs = x.max(0)[0].tolist()
-            x_mins = x.min(0)[0].tolist()
-
-            # We need to update the grid if
-            # 1) it hasn't ever been initialized, or
-            # 2) if any of the grid points are "out of bounds"
-            update_grid = (not self.has_initialized_grid.item()) or any(
-                x_min < bound[0] or x_max > bound[1]
-                for x_min, x_max, bound in zip(x_mins, x_maxs, self._tight_grid_bounds)
-            )
-
-            # Update the grid if needed
-            if update_grid:
-                grid_spacings = tuple(
-                    (x_max - x_min) / (gs - 4.02) for gs, x_min, x_max in zip(self.grid_sizes, x_mins, x_maxs)
-                )
-                self.grid_bounds = tuple(
-                    (x_min - 2.01 * spacing, x_max + 2.01 * spacing)
-                    for x_min, x_max, spacing in zip(x_mins, x_maxs, grid_spacings)
-                )
-                grid = create_grid(
-                    self.grid_sizes,
-                    self.grid_bounds,
-                    dtype=self.grid[0].dtype,
-                    device=self.grid[0].device,
-                )
-                self.update_grid(grid)
-
-        base_lazy_tsr = to_linear_operator(self._inducing_forward(last_dim_is_batch=last_dim_is_batch, **params))
-        if last_dim_is_batch and base_lazy_tsr.size(-3) == 1:
-            base_lazy_tsr = base_lazy_tsr.repeat(*x1.shape[:-2], x1.size(-1), 1, 1)
-
-        left_interp_indices, left_interp_values = self._compute_grid(x1, last_dim_is_batch)
-        if torch.equal(x1, x2):
-            right_interp_indices = left_interp_indices
-            right_interp_values = left_interp_values
-        else:
-            right_interp_indices, right_interp_values = self._compute_grid(x2, last_dim_is_batch)
-
-        batch_shape = torch.broadcast_shapes(
-            base_lazy_tsr.batch_shape,
-            left_interp_indices.shape[:-2],
-            right_interp_indices.shape[:-2],
-        )
-        res = InterpolatedLinearOperator(
-            base_lazy_tsr.expand(*batch_shape, *base_lazy_tsr.matrix_shape),
-            left_interp_indices.detach().expand(*batch_shape, *left_interp_indices.shape[-2:]),
-            left_interp_values.expand(*batch_shape, *left_interp_values.shape[-2:]),
-            right_interp_indices.detach().expand(*batch_shape, *right_interp_indices.shape[-2:]),
-            right_interp_values.expand(*batch_shape, *right_interp_values.shape[-2:]),
-        )
-
-        if diag:
-            return res.diagonal(dim1=-1, dim2=-2)
-        else:
-            return res
+        pass
 
     def prediction_strategy(self, train_inputs, train_prior_dist, train_labels, likelihood):
         return InterpolatedPredictionStrategy(train_inputs, train_prior_dist, train_labels, likelihood)

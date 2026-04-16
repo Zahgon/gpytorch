@@ -38,20 +38,7 @@ class ScaleToBounds(torch.nn.Module):
         self.register_buffer("max_val", torch.tensor(upper_bound))
 
     def forward(self, x):
-        if self.training:
-            min_val = x.min()
-            max_val = x.max()
-            self.min_val.data = min_val
-            self.max_val.data = max_val
-        else:
-            min_val = self.min_val
-            max_val = self.max_val
-            # Clamp extreme values
-            x = x.clamp(min_val, max_val)
-
-        diff = max_val - min_val
-        x = (x - min_val) * (0.95 * (self.upper_bound - self.lower_bound) / diff) + 0.95 * self.lower_bound
-        return x
+        pass
 
 
 def scale_to_bounds(x, lower_bound, upper_bound):
@@ -65,16 +52,7 @@ def scale_to_bounds(x, lower_bound, upper_bound):
     :return: scaled data
     :rtype: torch.Tensor (... x n x d)
     """
-    warnings.warn(
-        "The `scale_to_bounds` method is deprecated. Use the `gpytorch.utils.grid.ScaleToBounds` module instead.",
-        DeprecationWarning,
-    )
-    # Scale features so they fit inside grid bounds
-    min_val = x.min()
-    max_val = x.max()
-    diff = max_val - min_val
-    x = (x - min_val) * (0.95 * (upper_bound - lower_bound) / diff) + 0.95 * lower_bound
-    return x
+    pass
 
 
 def choose_grid_size(train_inputs, ratio=1.0, kronecker_structure=True):
@@ -91,13 +69,7 @@ def choose_grid_size(train_inputs, ratio=1.0, kronecker_structure=True):
     :return: Grid size
     :rtype: int
     """
-    # Scale features so they fit inside grid bounds
-    num_data = train_inputs.numel() if train_inputs.dim() == 1 else train_inputs.size(-2)
-    num_dim = 1 if train_inputs.dim() == 1 else train_inputs.size(-1)
-    if kronecker_structure:
-        return int(ratio * math.pow(num_data, 1.0 / num_dim))
-    else:
-        return ratio * num_data
+    pass
 
 
 def convert_legacy_grid(grid: torch.Tensor) -> list[torch.Tensor]:

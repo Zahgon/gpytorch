@@ -160,11 +160,11 @@ class ArcKernel(Kernel):
 
     @property
     def angle(self):
-        return self.raw_angle_constraint.transform(self.raw_angle)
+        pass
 
     @angle.setter
     def angle(self, value):
-        self._set_angle(value)
+        pass
 
     def _set_angle(self, value):
         if not torch.is_tensor(value):
@@ -173,11 +173,11 @@ class ArcKernel(Kernel):
 
     @property
     def radius(self):
-        return self.raw_radius_constraint.transform(self.raw_radius)
+        pass
 
     @radius.setter
     def radius(self, value):
-        self._set_radius(value)
+        pass
 
     def _set_radius(self, value):
         if not torch.is_tensor(value):
@@ -185,16 +185,10 @@ class ArcKernel(Kernel):
         self.initialize(raw_radius=self.raw_radius_constraint.inverse_transform(value))
 
     def embedding(self, x):
-        mask = self.delta_func(x)
-        x_ = x.div(self.lengthscale)
-        x_s = self.radius * torch.sin(pi * self.angle * x_) * mask
-        x_c = self.radius * torch.cos(pi * self.angle * x_) * mask
-        x_ = torch.cat((x_s, x_c), dim=-1)
-        return x_
+        pass
 
     def default_delta_func(self, x):
-        return torch.ones_like(x)
+        pass
 
     def forward(self, x1, x2, diag=False, **params):
-        x1_, x2_ = self.embedding(x1), self.embedding(x2)
-        return self.base_kernel(x1_, x2_, diag=diag)
+        pass

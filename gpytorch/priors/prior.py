@@ -34,9 +34,7 @@ class Prior(Distribution, Module, ABC):
         return super().log_prob(self.transform(x))
 
     def load_state_dict(self, state_dict: Mapping[str, Any], *args, **kwargs):
-        Module.load_state_dict(self, state_dict, *args, **kwargs)
-        if isinstance(self, TransformedDistribution):
-            _load_transformed_to_base_dist(self)
+        pass
 
     def __setattr__(self, name: str, value: Any) -> None:
         # If setting a BUFFERED_PREFIX attribute, update the base attribute instead.

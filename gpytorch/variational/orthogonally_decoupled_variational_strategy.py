@@ -76,9 +76,7 @@ class OrthogonallyDecoupledVariationalStrategy(_VariationalStrategy):
     @property
     @cached(name="prior_distribution_memo")
     def prior_distribution(self) -> MultivariateNormal:
-        out = self.model(self.inducing_points)
-        res = MultivariateNormal(out.mean, out.lazy_covariance_matrix.add_jitter(self.jitter_val))
-        return res
+        pass
 
     def forward(
         self,
@@ -89,31 +87,7 @@ class OrthogonallyDecoupledVariationalStrategy(_VariationalStrategy):
         diag: bool = True,
         **kwargs,
     ) -> MultivariateNormal:
-        if variational_inducing_covar is not None:
-            raise NotImplementedError(
-                "OrthogonallyDecoupledVariationalStrategy currently works with DeltaVariationalDistribution"
-            )
-
-        num_data = x.size(-2)
-
-        # `self.model` is a variational strategy. Need to force it to compute full covariance in train mode.
-        full_output = self.model(torch.cat([x, inducing_points], dim=-2), diag=False, **kwargs)
-        full_mean = full_output.mean
-        full_covar = full_output.lazy_covariance_matrix
-
-        if self.training:
-            induc_mean = full_mean[..., num_data:]
-            induc_induc_covar = full_covar[..., num_data:, num_data:]
-            prior_dist = MultivariateNormal(induc_mean, induc_induc_covar)
-            add_to_cache(self, "prior_distribution_memo", prior_dist)
-
-        test_mean = full_mean[..., :num_data]
-        data_induc_covar = full_covar[..., :num_data, num_data:]
-        predictive_mean = (data_induc_covar @ inducing_values.unsqueeze(-1)).squeeze(-1).add(test_mean)
-        predictive_covar = full_covar[..., :num_data, :num_data]
-
-        # Return the distribution
-        return MultivariateNormal(predictive_mean, predictive_covar)
+        pass
 
     def kl_divergence(self) -> Tensor:
         mean = self.variational_distribution.mean

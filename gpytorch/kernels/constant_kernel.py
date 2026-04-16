@@ -75,11 +75,11 @@ class ConstantKernel(Kernel):
 
     @property
     def constant(self) -> Tensor:
-        return self.raw_constant_constraint.transform(self.raw_constant)
+        pass
 
     @constant.setter
     def constant(self, value: Tensor) -> None:
-        self._set_constant(value)
+        pass
 
     def _set_constant(self, value: Tensor) -> None:
         value = value.view(*self.batch_shape, 1)
@@ -105,27 +105,4 @@ class ConstantKernel(Kernel):
             A (batch_shape x n1 x n2)-dim, resp. (batch_shape x n1)-dim, tensor of
             constant covariance values if diag is False, resp. True.
         """
-        if last_dim_is_batch:
-            x1 = x1.transpose(-1, -2).unsqueeze(-1)
-            x2 = x2.transpose(-1, -2).unsqueeze(-1)
-
-        dtype = torch.promote_types(x1.dtype, x2.dtype)
-
-        input_batch_shape = torch.broadcast_shapes(x1.shape[:-2], x2.shape[:-2])
-        if last_dim_is_batch:
-            # `input_batch_shape` is (batch, d) and `self.batch_shape` should only broadcast with batch, not the
-            # trailing dimension
-            batch_shape = torch.broadcast_shapes(self.batch_shape, input_batch_shape[:-1]) + input_batch_shape[-1:]
-        else:
-            batch_shape = torch.broadcast_shapes(self.batch_shape, input_batch_shape)
-
-        shape = batch_shape + (x1.shape[-2],) + (() if diag else (x2.shape[-2],))
-        constant = self.constant.to(dtype=dtype, device=x1.device)
-
-        if not diag:
-            constant = constant.unsqueeze(-1)
-
-        if last_dim_is_batch:
-            constant = constant.unsqueeze(-1)
-
-        return constant.expand(shape)
+        pass

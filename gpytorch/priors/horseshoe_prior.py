@@ -52,9 +52,7 @@ class HorseshoePrior(Prior):
         return torch.log((lb + ub) / 2)
 
     def rsample(self, sample_shape=torch.Size([])):
-        local_shrinkage = HalfCauchy(1).rsample(self.scale.shape)
-        param_sample = Normal(0, local_shrinkage * self.scale).rsample(sample_shape)
-        return param_sample
+        pass
 
     def expand(self, expand_shape, _instance=None):
         batch_shape = torch.Size(expand_shape)

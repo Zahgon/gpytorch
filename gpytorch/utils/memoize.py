@@ -23,7 +23,7 @@ def add_to_cache(obj, name, val, *args, **kwargs):
 
 def get_from_cache(obj, name, *args, **kwargs):
     """Get an item from the cache (honoring calling args)."""
-    return _get_from_cache(obj, name, *args, kwargs_pkl=pickle.dumps(kwargs))
+    pass
 
 
 def pop_from_cache(obj, name, *args, **kwargs):
@@ -55,11 +55,7 @@ def _cached(method=None, name=None):
 
     @functools.wraps(method)
     def g(self, *args, **kwargs):
-        cache_name = name if name is not None else method.__qualname__
-        kwargs_pkl = pickle.dumps(kwargs)
-        if not _is_in_cache(self, cache_name, *args, kwargs_pkl=kwargs_pkl):
-            return _add_to_cache(self, cache_name, method(self, *args, **kwargs), *args, kwargs_pkl=kwargs_pkl)
-        return _get_from_cache(self, cache_name, *args, kwargs_pkl=kwargs_pkl)
+        pass
 
     return g
 
@@ -73,10 +69,7 @@ def _cached_ignore_args(method=None, name=None):
 
     @functools.wraps(method)
     def g(self, *args, **kwargs):
-        cache_name = name if name is not None else method.__qualname__
-        if not _is_in_cache_ignore_args(self, cache_name):
-            return _add_to_cache_ignore_args(self, cache_name, method(self, *args, **kwargs))
-        return _get_from_cache_ignore_args(self, cache_name)
+        pass
 
     return g
 
@@ -123,4 +116,4 @@ def _is_in_cache_ignore_args(obj, name):
 
 def _is_in_cache_ignore_all_args(obj, name):
     """checks if item is in cache by name."""
-    return hasattr(obj, "_memoize_cache") and name in [x[0] for x in obj._memoize_cache.keys()]
+    pass

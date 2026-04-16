@@ -60,7 +60,7 @@ class VariationalELBO(_ApproximateMarginalLogLikelihood):
     """
 
     def _log_likelihood_term(self, variational_dist_f, target, **kwargs):
-        return self.likelihood.expected_log_prob(target, variational_dist_f, **kwargs).sum(-1)
+        pass
 
     def forward(self, variational_dist_f, target, **kwargs):
         r"""
@@ -76,4 +76,4 @@ class VariationalELBO(_ApproximateMarginalLogLikelihood):
         :rtype: torch.Tensor
         :return: Variational ELBO. Output shape corresponds to batch shape of the model/input data.
         """
-        return super().forward(variational_dist_f, target, **kwargs)
+        pass

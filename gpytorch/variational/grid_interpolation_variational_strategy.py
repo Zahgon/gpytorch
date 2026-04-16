@@ -57,27 +57,12 @@ class GridInterpolationVariationalStrategy(_VariationalStrategy):
         self.register_buffer("grid", grid)
 
     def _compute_grid(self, inputs):
-        n_data, n_dimensions = inputs.size(-2), inputs.size(-1)
-        batch_shape = inputs.shape[:-2]
-
-        inputs = inputs.reshape(-1, n_dimensions)
-        interp_indices, interp_values = Interpolation().interpolate(self.grid, inputs)
-        interp_indices = interp_indices.view(*batch_shape, n_data, -1)
-        interp_values = interp_values.view(*batch_shape, n_data, -1)
-
-        if (interp_indices.dim() - 2) != len(self._variational_distribution.batch_shape):
-            batch_shape = torch.broadcast_shapes(interp_indices.shape[:-2], self._variational_distribution.batch_shape)
-            interp_indices = interp_indices.expand(*batch_shape, *interp_indices.shape[-2:])
-            interp_values = interp_values.expand(*batch_shape, *interp_values.shape[-2:])
-        return interp_indices, interp_values
+        pass
 
     @property
     @cached(name="prior_distribution_memo")
     def prior_distribution(self):
-        out = self.model.forward(self.inducing_points)
-        # TODO: investigate why smaller than 1e-3 breaks some tests
-        res = MultivariateNormal(out.mean, out.lazy_covariance_matrix.add_jitter(1e-3))
-        return res
+        pass
 
     def forward(
         self,
@@ -88,29 +73,4 @@ class GridInterpolationVariationalStrategy(_VariationalStrategy):
         diag: bool = True,
         **kwargs,
     ):
-        if variational_inducing_covar is None:
-            raise RuntimeError(
-                "GridInterpolationVariationalStrategy is only compatible with Gaussian variational "
-                f"distributions. Got {self.variational_distribution.__class__.__name__}."
-            )
-
-        variational_distribution = self.variational_distribution
-
-        # Get interpolations
-        interp_indices, interp_values = self._compute_grid(x)
-
-        # Compute test mean
-        # Left multiply samples by interpolation matrix
-        predictive_mean = left_interp(interp_indices, interp_values, inducing_values.unsqueeze(-1))
-        predictive_mean = predictive_mean.squeeze(-1)
-
-        # Compute test covar
-        predictive_covar = InterpolatedLinearOperator(
-            variational_distribution.lazy_covariance_matrix,
-            interp_indices,
-            interp_values,
-            interp_indices,
-            interp_values,
-        )
-        output = MultivariateNormal(predictive_mean, predictive_covar)
-        return output
+        pass

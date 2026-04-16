@@ -25,39 +25,14 @@ from ..priors import Prior
 
 def sq_dist(x1, x2, x1_eq_x2=False):
     """Equivalent to the square of `torch.cdist` with p=2."""
-    # TODO: use torch squared cdist once implemented: https://github.com/pytorch/pytorch/pull/25799
-    adjustment = x1.mean(-2, keepdim=True)
-    x1 = x1 - adjustment
-
-    # Compute squared distance matrix using quadratic expansion
-    x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
-    x1_pad = torch.ones_like(x1_norm)
-    if x1_eq_x2 and not x1.requires_grad and not x2.requires_grad:
-        x2, x2_norm, x2_pad = x1, x1_norm, x1_pad
-    else:
-        x2 = x2 - adjustment  # x1 and x2 should be identical in all dims except -2 at this point
-        x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
-        x2_pad = torch.ones_like(x2_norm)
-    x1_ = torch.cat([-2.0 * x1, x1_norm, x1_pad], dim=-1)
-    x2_ = torch.cat([x2, x2_pad, x2_norm], dim=-1)
-    res = x1_.matmul(x2_.transpose(-2, -1))
-
-    if x1_eq_x2 and not x1.requires_grad and not x2.requires_grad:
-        res.diagonal(dim1=-2, dim2=-1).fill_(0)
-
-    # Zero out negative values
-    return res.clamp_min_(0)
+    pass
 
 
 def dist(x1, x2, x1_eq_x2=False):
     """
     Equivalent to `torch.cdist` with p=2, but clamps the minimum element to 1e-15.
     """
-    if not x1_eq_x2:
-        res = torch.cdist(x1, x2)
-        return res.clamp_min(1e-15)
-    res = sq_dist(x1, x2, x1_eq_x2=x1_eq_x2)
-    return res.clamp_min_(1e-30).sqrt_()
+    pass
 
 
 # only necessary for legacy purposes
@@ -73,12 +48,10 @@ class Distance(torch.nn.Module):
         self._postprocess = postprocess
 
     def _sq_dist(self, x1, x2, x1_eq_x2=False, postprocess=False):
-        res = sq_dist(x1, x2, x1_eq_x2=x1_eq_x2)
-        return self._postprocess(res) if postprocess else res
+        pass
 
     def _dist(self, x1, x2, x1_eq_x2=False, postprocess=False):
-        res = dist(x1, x2, x1_eq_x2=x1_eq_x2)
-        return self._postprocess(res) if postprocess else res
+        pass
 
 
 class Kernel(Module):
@@ -209,21 +182,15 @@ class Kernel(Module):
 
     def _lengthscale_param(self, m: Kernel) -> Tensor:
         # Used by the lengthscale_prior
-        return m.lengthscale
+        pass
 
     def _lengthscale_closure(self, m: Kernel, v: Tensor) -> None:
         # Used by the lengthscale_prior
-        m._set_lengthscale(v)
+        pass
 
     def _set_lengthscale(self, value: Tensor):
         # Used by the lengthscale_prior
-        if not self.has_lengthscale:
-            raise RuntimeError("Kernel has no lengthscale.")
-
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(self.raw_lengthscale)
-
-        self.initialize(raw_lengthscale=self.raw_lengthscale_constraint.inverse_transform(value))
+        pass
 
     @abstractmethod
     def forward(
@@ -252,15 +219,11 @@ class Kernel(Module):
 
     @property
     def batch_shape(self) -> torch.Size:
-        kernels = list(self.sub_kernels())
-        if len(kernels):
-            return torch.broadcast_shapes(self._batch_shape, *[k.batch_shape for k in kernels])
-        else:
-            return self._batch_shape
+        pass
 
     @batch_shape.setter
     def batch_shape(self, val: torch.Size):
-        self._batch_shape = val
+        pass
 
     @property
     def device(self) -> torch.device | None:
@@ -275,34 +238,22 @@ class Kernel(Module):
 
     @property
     def dtype(self) -> torch.dtype:
-        if self.has_lengthscale:
-            return self.lengthscale.dtype
-        dtypes = {param.dtype for param in self.parameters()}
-        if len(dtypes) > 1:
-            raise RuntimeError(f"The kernel's parameters have multiple dtypes: {dtypes}.")
-        elif dtypes:
-            return dtypes.pop()
-        return torch.get_default_dtype()
+        pass
 
     @property
     def lengthscale(self) -> Tensor:
-        if self.has_lengthscale:
-            return self.raw_lengthscale_constraint.transform(self.raw_lengthscale)
-        else:
-            return None
+        pass
 
     @lengthscale.setter
     def lengthscale(self, value: Tensor):
-        self._set_lengthscale(value)
+        pass
 
     @property
     def is_stationary(self) -> bool:
-        return self.has_lengthscale
+        pass
 
     def local_load_samples(self, samples_dict: dict[str, Tensor], memo: set, prefix: str):
-        num_samples = next(iter(samples_dict.values())).size(0)
-        self.batch_shape = torch.Size([num_samples]) + self.batch_shape
-        super().local_load_samples(samples_dict, memo, prefix)
+        pass
 
     def covar_dist(
         self,
@@ -333,23 +284,7 @@ class Kernel(Module):
             * `diag`: `... x N`
             * `diag` with `last_dim_is_batch=True`: `... x K x N`
         """
-        if last_dim_is_batch:
-            x1 = x1.transpose(-1, -2).unsqueeze(-1)
-            x2 = x2.transpose(-1, -2).unsqueeze(-1)
-
-        x1_eq_x2 = torch.equal(x1, x2)
-        res = None
-
-        if diag:
-            # Special case the diagonal because we can return all zeros most of the time.
-            if x1_eq_x2:
-                return torch.zeros(*x1.shape[:-2], x1.shape[-2], dtype=x1.dtype, device=x1.device)
-            else:
-                res = torch.linalg.norm(x1 - x2, dim=-1)  # 2-norm by default
-                return res.pow(2) if square_dist else res
-        else:
-            dist_func = sq_dist if square_dist else dist
-            return dist_func(x1, x2, x1_eq_x2)
+        pass
 
     def expand_batch(self, *sizes: torch.Size | tuple[int, ...]) -> Kernel:
         r"""
@@ -358,50 +293,7 @@ class Kernel(Module):
 
         :param sizes: The batch shape of the new tensor
         """
-        # Type checking
-        if len(sizes) == 1 and hasattr(sizes, "__iter__"):
-            new_batch_shape = torch.Size(sizes[0])
-        elif all(isinstance(size, int) for size in sizes):
-            new_batch_shape = torch.Size(sizes)
-        else:
-            raise RuntimeError(f"Invalid arguments {sizes} to expand_batch.")
-
-        # Check for easy case:
-        orig_batch_shape = self.batch_shape
-        if new_batch_shape == orig_batch_shape:
-            return self
-
-        # Ensure that the expansion size is compatible with the given batch shape
-        try:
-            torch.broadcast_shapes(new_batch_shape, orig_batch_shape)
-        except RuntimeError:
-            raise RuntimeError(
-                f"Cannot expand a kernel with batch shape {self.batch_shape} to new shape {new_batch_shape}"
-            )
-
-        # Create a new kernel with updated batch shape
-        new_kernel = deepcopy(self)
-        new_kernel._batch_shape = new_batch_shape
-
-        # Reshape the parameters of the kernel
-        for param_name, param in self.named_parameters(recurse=False):
-            # For a given parameter, get the number of dimensions that do not correspond to the batch shape
-            non_batch_shape = param.shape[len(orig_batch_shape) :]
-            new_param_shape = torch.Size([*new_batch_shape, *non_batch_shape])
-            new_kernel.__getattr__(param_name).data = param.expand(new_param_shape)
-
-        # Reshape the buffers of the kernel
-        for buffr_name, buffr in self.named_buffers(recurse=False):
-            # For a given buffer, get the number of dimensions that do not correspond to the batch shape
-            non_batch_shape = buffr.shape[len(orig_batch_shape) :]
-            new_buffer_shape = torch.Size([*new_batch_shape, *non_batch_shape])
-            new_kernel.__getattr__(buffr_name).data = buffr.expand(new_buffer_shape)
-
-        # Recurse, if necessary
-        for sub_module_name, sub_module in self.named_sub_kernels():
-            new_kernel.__setattr__(sub_module_name, sub_module.expand_batch(new_batch_shape))
-
-        return new_kernel
+        pass
 
     def named_sub_kernels(self) -> Iterable[tuple[str, Kernel]]:
         """
@@ -411,9 +303,7 @@ class Kernel(Module):
         :return: An iterator over the component kernel objects,
             along with the name of each component kernel.
         """
-        for name, module in self.named_modules():
-            if module is not self and isinstance(module, Kernel):
-                yield name, module
+        pass
 
     def num_outputs_per_input(self, x1: Tensor, x2: Tensor) -> int:
         """
@@ -428,7 +318,7 @@ class Kernel(Module):
 
         :return: `num_outputs_per_input` (usually 1).
         """
-        return 1
+        pass
 
     def prediction_strategy(
         self,
@@ -448,8 +338,7 @@ class Kernel(Module):
 
         :return: An iterator over the component kernel objects.
         """
-        for _, kernel in self.named_sub_kernels():
-            yield kernel
+        pass
 
     def __call__(
         self, x1: Tensor, x2: Tensor | None = None, diag: bool = False, last_dim_is_batch: bool = False, **params
@@ -603,25 +492,17 @@ class AdditiveKernel(Kernel):
 
     @property
     def is_stationary(self) -> bool:
-        return all(k.is_stationary for k in self.kernels)
+        pass
 
     def __init__(self, *kernels: Kernel):
         super().__init__()
         self.kernels = ModuleList(kernels)
 
     def forward(self, x1: Tensor, x2: Tensor, diag: bool = False, **params) -> Tensor | LinearOperator:
-        res = ZeroLinearOperator() if not diag else 0
-        for kern in self.kernels:
-            next_term = kern(x1, x2, diag=diag, **params)
-            if not diag:
-                res = res + to_linear_operator(next_term)
-            else:
-                res = res + next_term
-
-        return res
+        pass
 
     def num_outputs_per_input(self, x1, x2):
-        return self.kernels[0].num_outputs_per_input(x1, x2)
+        pass
 
     def __getitem__(self, index) -> Kernel:
         new_kernel = deepcopy(self)
@@ -645,40 +526,17 @@ class ProductKernel(Kernel):
 
     @property
     def is_stationary(self) -> bool:
-        return all(k.is_stationary for k in self.kernels)
+        pass
 
     def __init__(self, *kernels: Kernel):
         super().__init__()
         self.kernels = ModuleList(kernels)
 
     def forward(self, x1: Tensor, x2: Tensor, diag: bool = False, **params) -> Tensor | LinearOperator:
-        x1_eq_x2 = torch.equal(x1, x2)
-
-        if not x1_eq_x2:
-            # If x1 != x2, then we can't make a MulLinearOperator because the kernel won't necessarily be
-            # square/symmetric
-            res = to_dense(self.kernels[0](x1, x2, diag=diag, **params))
-        else:
-            res = self.kernels[0](x1, x2, diag=diag, **params)
-
-            if not diag:
-                res = to_linear_operator(res)
-
-        for kern in self.kernels[1:]:
-            next_term = kern(x1, x2, diag=diag, **params)
-            if not x1_eq_x2:
-                # Again to_dense if x1 != x2
-                res = res * to_dense(next_term)
-            else:
-                if not diag:
-                    res = res * to_linear_operator(next_term)
-                else:
-                    res = res * next_term
-
-        return res
+        pass
 
     def num_outputs_per_input(self, x1: Tensor, x2: Tensor) -> int:
-        return self.kernels[0].num_outputs_per_input(x1, x2)
+        pass
 
     def __getitem__(self, index) -> Kernel:
         new_kernel = deepcopy(self)

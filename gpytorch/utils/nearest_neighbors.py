@@ -92,38 +92,7 @@ class NNUtil(Module):
         :rtype: torch.LongTensor
         :return: the indices of nearest neighbors in the training data
         """
-
-        assert self.train_n is not None, "Please initialize with training data first."
-        if k is None:
-            k = self.k
-        else:
-            assert k > 0, f"k must be greater than 0, but got k = {k}."
-        assert k <= self.train_n, (
-            f"k should be smaller than number of train data, "
-            f"but got k = {k}, number of train data = {self.train_n}."
-        )
-
-        test_x = self._expand_and_check_shape(test_x)
-
-        test_n = test_x.shape[-2]
-        test_x = test_x.view(-1, test_n, self.dim)
-        nn_idx = torch.empty(self.batch_shape.numel(), test_n, k, dtype=torch.int64, device=test_x.device)
-
-        with torch.no_grad():
-            if self.nnlib == "sklearn":
-                if self.train_neighbors is None:
-                    raise RuntimeError("The nearest neighbor set has not been defined. First call `set_nn_idx`")
-
-                for i in range(self.batch_shape.numel()):
-                    nn_idx_i = torch.from_numpy(self.train_neighbors[i].kneighbors(test_x[i].cpu().numpy())[1][..., :k])
-                    nn_idx[i] = nn_idx_i.long().to(test_x.device)
-            else:
-
-                for i in range(self.batch_shape.numel()):
-                    nn_idx[i] = self.index[i].search(test_x[i], k)[1]
-
-        nn_idx = nn_idx.view(*self.batch_shape, test_n, k)
-        return nn_idx
+        pass
 
     def set_nn_idx(self, train_x):
         """

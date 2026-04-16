@@ -10,9 +10,7 @@ from .keops_kernel import _Anysor, _lazify_and_expand_inputs, KeOpsKernel
 
 
 def _covar_func(x1: _Anysor, x2: _Anysor, **kwargs) -> _Anysor:
-    x1_, x2_ = _lazify_and_expand_inputs(x1, x2)
-    K = (-((x1_ - x2_) ** 2).sum(-1) / 2).exp()
-    return K
+    pass
 
 
 class RBFKernel(KeOpsKernel):
@@ -42,14 +40,4 @@ class RBFKernel(KeOpsKernel):
     has_lengthscale = True
 
     def forward(self, x1: Tensor, x2: Tensor, diag: bool = False, **kwargs) -> KernelLinearOperator:
-        x1_ = x1 / self.lengthscale
-        x2_ = x2 / self.lengthscale
-        # return KernelLinearOperator inst only when calculating the whole covariance matrix
-        res = KernelLinearOperator(x1_, x2_, covar_func=_covar_func, **kwargs)
-
-        # TODO: diag=True mode will be removed with the GpyTorch 2.0 PR to remove LazyEvaluatedKernelTensor
-        # (it will be replaced by a `_symmetric_diag` method for quickly computing the diagonals of symmetric matrices)
-        if diag:
-            return res.diagonal(dim1=-1, dim2=-2)
-        else:
-            return res
+        pass

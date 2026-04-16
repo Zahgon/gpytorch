@@ -80,9 +80,7 @@ class PyroGP(GP, _PyroMixin):
         :param args: Additional arguments passed to the likelihood's forward function.
         :param kwargs: Additional keyword arguments passed to the likelihood's forward function.
         """
-        # Get q(f)
-        function_dist = self.pyro_guide(input, beta=self.beta, name_prefix=self.name_prefix)
-        return self.likelihood.pyro_guide(function_dist, target, *args, **kwargs)
+        pass
 
     def model(self, input, target, *args, **kwargs):
         r"""
@@ -94,12 +92,7 @@ class PyroGP(GP, _PyroMixin):
         :param args: Additional arguments passed to the likelihood's forward function.
         :param kwargs: Additional keyword arguments passed to the likelihood's forward function.
         """
-        # Include module
-        pyro.module(self.name_prefix + ".gp", self)
-
-        # Get p(f)
-        function_dist = self.pyro_model(input, beta=self.beta, name_prefix=self.name_prefix)
-        return self.likelihood.pyro_model(function_dist, target, *args, **kwargs)
+        pass
 
     def __call__(self, inputs, prior=False):
         if inputs.dim() == 1:

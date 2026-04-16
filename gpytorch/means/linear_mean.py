@@ -17,7 +17,4 @@ class LinearMean(Mean):
             self.bias = None
 
     def forward(self, x):
-        res = x.matmul(self.weights).squeeze(-1)
-        if self.bias is not None:
-            res = res + self.bias
-        return res
+        pass

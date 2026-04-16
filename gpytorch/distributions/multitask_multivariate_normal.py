@@ -76,12 +76,11 @@ class MultitaskMultivariateNormal(MultivariateNormal):
         Returns the shape of a base sample (without batching) that is used to
         generate a single sample.
         """
-        base_sample_shape = self.event_shape
-        return base_sample_shape
+        pass
 
     @property
     def event_shape(self):
-        return self._output_shape[-2:]
+        pass
 
     @classmethod
     def from_batch_mvn(cls, batch_mvn, task_dim=-1):
@@ -109,19 +108,7 @@ class MultitaskMultivariateNormal(MultivariateNormal):
             >>> print(mmvn.event_shape, mmvn.batch_shape)
             >>> # torch.Size([3, 2]), torch.Size([4])
         """
-        orig_task_dim = task_dim
-        task_dim = task_dim if task_dim >= 0 else (len(batch_mvn.batch_shape) + task_dim)
-        if task_dim < 0 or task_dim > len(batch_mvn.batch_shape):
-            raise ValueError(
-                f"task_dim of {orig_task_dim} is incompatible with MVN batch shape of {batch_mvn.batch_shape}"
-            )
-
-        num_dim = batch_mvn.mean.dim()
-        res = cls(
-            mean=batch_mvn.mean.permute(*range(0, task_dim), *range(task_dim + 1, num_dim), task_dim),
-            covariance_matrix=BlockInterleavedLinearOperator(batch_mvn.lazy_covariance_matrix, block_dim=task_dim),
-        )
-        return res
+        pass
 
     @classmethod
     def from_independent_mvns(cls, mvns):
@@ -150,26 +137,7 @@ class MultitaskMultivariateNormal(MultivariateNormal):
             >>> print(mmvn.event_shape, mmvn.batch_shape)
             >>> # torch.Size([3, 2]), torch.Size([4])
         """
-        if len(mvns) < 2:
-            raise ValueError("Must provide at least 2 MVNs to form a MultitaskMultivariateNormal")
-        if any(isinstance(mvn, MultitaskMultivariateNormal) for mvn in mvns):
-            raise ValueError("Cannot accept MultitaskMultivariateNormals")
-        if not all(m.batch_shape == mvns[0].batch_shape for m in mvns[1:]):
-            batch_shape = torch.broadcast_shapes(*(m.batch_shape for m in mvns))
-            mvns = [mvn.expand(batch_shape) for mvn in mvns]
-        if not all(m.event_shape == mvns[0].event_shape for m in mvns[1:]):
-            raise ValueError("All MultivariateNormals must have the same event shape")
-        mean = torch.stack([mvn.mean for mvn in mvns], -1)
-        # TODO: To do the following efficiently, we don't want to evaluate the
-        # covariance matrices. Instead, we want to use the lazies directly in the
-        # BlockDiagLinearOperator. This will require implementing a new BatchLinearOperator:
-
-        # https://github.com/cornellius-gp/gpytorch/issues/468
-        covar_blocks_lazy = CatLinearOperator(
-            *[mvn.lazy_covariance_matrix.unsqueeze(0) for mvn in mvns], dim=0, output_device=mean.device
-        )
-        covar_lazy = BlockDiagLinearOperator(covar_blocks_lazy, block_dim=0)
-        return cls(mean=mean, covariance_matrix=covar_lazy, interleaved=False)
+        pass
 
     @classmethod
     def from_repeated_mvn(cls, mvn, num_tasks):
@@ -196,7 +164,7 @@ class MultitaskMultivariateNormal(MultivariateNormal):
             >>> print(mmvn.event_shape, mmvn.batch_shape)
             >>> # torch.Size([3, 2]), torch.Size([4])
         """
-        return cls.from_batch_mvn(mvn.expand(torch.Size([num_tasks]) + mvn.batch_shape), task_dim=0)
+        pass
 
     def expand(self, batch_size):
         new_mean = self.mean.expand(torch.Size(batch_size) + self.mean.shape[-2:])
@@ -205,12 +173,7 @@ class MultitaskMultivariateNormal(MultivariateNormal):
         return res
 
     def get_base_samples(self, sample_shape=torch.Size()):
-        base_samples = super().get_base_samples(sample_shape)
-        if not self._interleaved:
-            # flip shape of last two dimensions
-            new_shape = sample_shape + self._output_shape[:-2] + self._output_shape[:-3:-1]
-            return base_samples.view(new_shape).transpose(-1, -2).contiguous()
-        return base_samples.view(*sample_shape, *self._output_shape)
+        pass
 
     def log_prob(self, value):
         if not self._interleaved:
@@ -230,27 +193,10 @@ class MultitaskMultivariateNormal(MultivariateNormal):
 
     @property
     def num_tasks(self):
-        return self._output_shape[-1]
+        pass
 
     def rsample(self, sample_shape=torch.Size(), base_samples=None):
-        if base_samples is not None:
-            # Make sure that the base samples agree with the distribution
-            mean_shape = self.mean.shape
-            base_sample_shape = base_samples.shape[-self.mean.ndimension() :]
-            if mean_shape != base_sample_shape:
-                raise RuntimeError(
-                    "The shape of base_samples (minus sample shape dimensions) should agree with the shape "
-                    "of self.mean. Expected ...{} but got {}".format(mean_shape, base_sample_shape)
-                )
-            sample_shape = base_samples.shape[: -self.mean.ndimension()]
-            base_samples = base_samples.view(*sample_shape, *self.loc.shape)
-
-        samples = super().rsample(sample_shape=sample_shape, base_samples=base_samples)
-        if not self._interleaved:
-            # flip shape of last two dimensions
-            new_shape = sample_shape + self._output_shape[:-2] + self._output_shape[:-3:-1]
-            return samples.view(new_shape).transpose(-1, -2).contiguous()
-        return samples.view(sample_shape + self._output_shape)
+        pass
 
     def to_data_independent_dist(self, jitter_val=1e-4):
         """
@@ -261,28 +207,11 @@ class MultitaskMultivariateNormal(MultivariateNormal):
         :returns: the bached data-independent MVN
         :rtype: gpytorch.distributions.MultivariateNormal
         """
-        # Create batch distribution where all data are independent, but the tasks are dependent
-        full_covar = self.lazy_covariance_matrix
-        num_data, num_tasks = self.mean.shape[-2:]
-        if self._interleaved:
-            data_indices = torch.arange(0, num_data * num_tasks, num_tasks, device=full_covar.device).view(-1, 1, 1)
-            task_indices = torch.arange(num_tasks, device=full_covar.device)
-        else:
-            data_indices = torch.arange(num_data, device=full_covar.device).view(-1, 1, 1)
-            task_indices = torch.arange(0, num_data * num_tasks, num_data, device=full_covar.device)
-        task_covars = full_covar[
-            ..., data_indices + task_indices.unsqueeze(-2), data_indices + task_indices.unsqueeze(-1)
-        ]
-        return MultivariateNormal(self.mean, to_linear_operator(task_covars).add_jitter(jitter_val=jitter_val))
+        pass
 
     @property
     def variance(self):
-        var = super().variance
-        if not self._interleaved:
-            # flip shape of last two dimensions
-            new_shape = self._output_shape[:-2] + self._output_shape[:-3:-1]
-            return var.view(new_shape).transpose(-1, -2).contiguous()
-        return var.view(self._output_shape)
+        pass
 
     def __getitem__(self, idx) -> MultivariateNormal:
         """
@@ -405,24 +334,8 @@ class MultitaskMultivariateNormal(MultivariateNormal):
 
 
 def _normalize_index(i: int, dim_size: int) -> int:
-    if i < 0:
-        return dim_size + i
-    else:
-        return i
+    pass
 
 
 def _normalize_slice(s: slice, dim_size: int) -> slice:
-    start = s.start
-    if start is None:
-        start = 0
-    elif start < 0:
-        start = dim_size + start
-    stop = s.stop
-    if stop is None:
-        stop = dim_size
-    elif stop < 0:
-        stop = dim_size + stop
-    step = s.step
-    if step is None:
-        step = 1
-    return slice(start, stop, step)
+    pass

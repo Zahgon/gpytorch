@@ -65,8 +65,7 @@ class LKJPrior(LKJCholeskyFactorPrior):
         return super().log_prob(X_cholesky)
 
     def sample(self, sample_shape=torch.Size()):
-        R = super().sample(sample_shape=sample_shape)
-        return R.matmul(R.transpose(-1, -2))
+        pass
 
 
 class LKJCovariancePrior(LKJPrior):
@@ -110,12 +109,7 @@ class LKJCovariancePrior(LKJPrior):
         return log_prob_corr + log_prob_sd
 
     def sample(self, sample_shape=torch.Size()):
-        base_correlation = self.correlation_prior.sample(sample_shape)
-        marginal_sds = self.sd_prior.rsample(sample_shape)
-        # expand sds to have the same shape as the base correlation matrix
-        marginal_sds = marginal_sds.repeat(*[1] * len(sample_shape), self.correlation_prior.n)
-        marginal_sds = torch.diag_embed(marginal_sds)
-        return marginal_sds.matmul(base_correlation).matmul(marginal_sds)
+        pass
 
 
 def _batch_form_diag(tsr):

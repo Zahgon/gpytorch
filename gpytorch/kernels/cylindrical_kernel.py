@@ -96,22 +96,19 @@ class CylindricalKernel(Kernel):
 
     @property
     def angular_weights(self) -> Tensor:
-        return self.raw_angular_weights_constraint.transform(self.raw_angular_weights)
+        pass
 
     @angular_weights.setter
     def angular_weights(self, value: Tensor) -> None:
-        if not torch.is_tensor(value):
-            value = torch.tensor(value)
-
-        self.initialize(raw_angular_weights=self.raw_angular_weights_constraint.inverse_transform(value))
+        pass
 
     @property
     def alpha(self) -> Tensor:
-        return self.raw_alpha_constraint.transform(self.raw_alpha)
+        pass
 
     @alpha.setter
     def alpha(self, value: Tensor) -> None:
-        self._set_alpha(value)
+        pass
 
     def _set_alpha(self, value: Tensor | float) -> None:
         # Used by the alpha_prior
@@ -121,11 +118,11 @@ class CylindricalKernel(Kernel):
 
     @property
     def beta(self) -> Tensor:
-        return self.raw_beta_constraint.transform(self.raw_beta)
+        pass
 
     @beta.setter
     def beta(self, value: Tensor) -> None:
-        self._set_beta(value)
+        pass
 
     def _set_beta(self, value: Tensor | float) -> None:
         # Used by the beta_prior
@@ -135,40 +132,10 @@ class CylindricalKernel(Kernel):
 
     def forward(self, x1: Tensor, x2: Tensor, diag: bool | None = False, **params) -> Tensor:
 
-        x1_, x2_ = x1.clone(), x2.clone()
-        # Jitter datapoints that are exactly 0
-        x1_[x1_ == 0], x2_[x2_ == 0] = x1_[x1_ == 0] + self.eps, x2_[x2_ == 0] + self.eps
-        r1, r2 = x1_.norm(dim=-1, keepdim=True), x2_.norm(dim=-1, keepdim=True)
-
-        if torch.any(r1 > 1.0) or torch.any(r2 > 1.0):
-            raise RuntimeError("Cylindrical kernel not defined for data points with radius > 1. Scale your data!")
-
-        a1, a2 = x1.div(r1), x2.div(r2)
-        if not diag:
-            gram_mat = a1.matmul(a2.transpose(-2, -1))
-            for p in range(self.num_angular_weights):
-                if p == 0:
-                    angular_kernel = self.angular_weights[..., 0, None, None]
-                else:
-                    angular_kernel = angular_kernel + self.angular_weights[..., p, None, None].mul(gram_mat.pow(p))
-        else:
-            gram_mat = a1.mul(a2).sum(-1)
-            for p in range(self.num_angular_weights):
-                if p == 0:
-                    angular_kernel = self.angular_weights[..., 0, None]
-                else:
-                    angular_kernel = angular_kernel + self.angular_weights[..., p, None].mul(gram_mat.pow(p))
-
-        with settings.lazily_evaluate_kernels(False):
-            radial_kernel = self.radial_base_kernel(self.kuma(r1), self.kuma(r2), diag=diag, **params)
-        return radial_kernel.mul(angular_kernel)
+        pass
 
     def kuma(self, x: Tensor) -> Tensor:
-        alpha = self.alpha.view(*self.batch_shape, 1, 1)
-        beta = self.beta.view(*self.batch_shape, 1, 1)
-
-        res = 1 - (1 - x.pow(alpha) + self.eps).pow(beta)
-        return res
+        pass
 
     def num_outputs_per_input(self, x1: Tensor, x2: Tensor) -> int:
-        return self.radial_base_kernel.num_outputs_per_input(x1, x2)
+        pass

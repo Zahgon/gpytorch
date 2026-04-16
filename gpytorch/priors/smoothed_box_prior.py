@@ -56,16 +56,16 @@ class SmoothedBoxPrior(Prior):
 
     @property
     def _c(self):
-        return (self.a + self.b) / 2
+        pass
 
     @property
     def _r(self):
-        return (self.b - self.a) / 2
+        pass
 
     @property
     def _M(self):
         # normalization factor to make this a probability distribution
-        return torch.log(1 + (self.b - self.a) / (math.sqrt(2 * math.pi) * self.sigma))
+        pass
 
     def log_prob(self, x):
         return self._log_prob(self.transform(x))
@@ -76,16 +76,4 @@ class SmoothedBoxPrior(Prior):
         return (self.tails.log_prob(X) - self._M).sum(-1)
 
     def rsample(self, sample_shape=torch.Size()):
-        shape = self._extended_shape(sample_shape)
-        gauss_max = 1 / (math.sqrt(2 * math.pi) * self.sigma)
-        gauss_weight = 1 / (gauss_max * (self.b - self.a) + 1)
-
-        picks = torch.bernoulli(gauss_weight.expand(shape)).to(self.a.device)
-
-        uniform_eps = torch.rand(shape, dtype=self.a.dtype, device=self.a.device)
-        uniform_samples = self.a + uniform_eps * (self.b - self.a)
-
-        gaussian_eps = self.tails.rsample(sample_shape).to(self.a.device)
-        gaussian_samples = gaussian_eps + torch.where(gaussian_eps < 0.0, self.a, self.b)
-
-        return torch.where(picks > 0, gaussian_samples, uniform_samples)
+        pass

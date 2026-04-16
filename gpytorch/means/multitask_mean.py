@@ -42,4 +42,4 @@ class MultitaskMean(Mean):
         """
         Evaluate each mean in self.base_means on the input data, and return as an `n x t` matrix of means.
         """
-        return torch.cat([sub_mean(input).unsqueeze(-1) for sub_mean in self.base_means], dim=-1)
+        pass

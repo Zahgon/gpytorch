@@ -21,17 +21,7 @@ def _select_lmc_coefficients(lmc_coefficients: torch.Tensor, indices: torch.Long
     lmc_coefficients: torch.Tensor ... x num_latents x ... x num_tasks
     indices: torch.Tesnor ... x N
     """
-    batch_shape = torch.broadcast_shapes(lmc_coefficients.shape[:-1], indices.shape[:-1])
-
-    # We will use the left_interp helper to do the indexing
-    lmc_coefficients = lmc_coefficients.expand(*batch_shape, lmc_coefficients.shape[-1])[..., None]
-    indices = indices.expand(*batch_shape, indices.shape[-1])[..., None]
-    res = left_interp(
-        indices,
-        torch.ones(indices.shape, dtype=torch.long, device=indices.device),
-        lmc_coefficients,
-    ).squeeze(-1)
-    return res
+    pass
 
 
 class LMCVariationalStrategy(_VariationalStrategy):
@@ -147,15 +137,15 @@ class LMCVariationalStrategy(_VariationalStrategy):
 
     @property
     def prior_distribution(self) -> MultivariateNormal:
-        return self.base_variational_strategy.prior_distribution
+        pass
 
     @property
     def variational_distribution(self) -> MultivariateNormal:
-        return self.base_variational_strategy.variational_distribution
+        pass
 
     @property
     def variational_params_initialized(self) -> bool:
-        return self.base_variational_strategy.variational_params_initialized
+        pass
 
     def kl_divergence(self) -> Tensor:
         return super().kl_divergence().sum(dim=self.latent_dim)

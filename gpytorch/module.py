@@ -102,11 +102,10 @@ class Module(nn.Module):
             )
 
     def _strict(self, value: bool) -> None:
-        _set_strict(self, value)
+        pass
 
     def added_loss_terms(self):
-        for _, strategy in self.named_added_loss_terms():
-            yield strategy
+        pass
 
     def forward(self, *inputs, **kwargs) -> Tensor | Distribution | LinearOperator:
         raise NotImplementedError
@@ -116,8 +115,7 @@ class Module(nn.Module):
             yield constraint
 
     def hyperparameters(self):
-        for _, param in self.named_hyperparameters():
-            yield param
+        pass
 
     def initialize(self: ModuleSelf, **kwargs) -> ModuleSelf:
         """
@@ -199,14 +197,10 @@ class Module(nn.Module):
                 strategy and the strategy
 
         """
-        return _extract_named_added_loss_terms(module=self, memo=None, prefix="")
+        pass
 
     def named_hyperparameters(self):
-        from .variational._variational_distribution import _VariationalDistribution
-
-        for module_prefix, module in self.named_modules():
-            if not isinstance(module, _VariationalDistribution):
-                yield from module.named_parameters(prefix=module_prefix, recurse=False)
+        pass
 
     def named_priors(self) -> Iterator[tuple[str, nn.Module, Prior, Closure, SettingClosure | None]]:
         """Returns an iterator over the module's priors, yielding the name of the prior,
@@ -220,17 +214,13 @@ class Module(nn.Module):
                 - a tuple of tuples (param, transform), one for each of the parameters associated with the prior
                 - the prior's transform to be called on the parameters
         """
-        return _extract_named_priors(module=self, prefix="")
+        pass
 
     def named_constraints(self) -> Iterator[tuple[str, Interval]]:
         return _extract_named_constraints(module=self, memo=None, prefix="")
 
     def named_variational_parameters(self):
-        from .variational._variational_distribution import _VariationalDistribution
-
-        for module_prefix, module in self.named_modules():
-            if isinstance(module, _VariationalDistribution):
-                yield from module.named_parameters(prefix=module_prefix, recurse=False)
+        pass
 
     def register_added_loss_term(self, name):
         self._added_loss_terms[name] = None
@@ -285,7 +275,7 @@ class Module(nn.Module):
                 )
 
             def closure_new(module: nn.Module) -> Tensor:
-                return getattr(module, param)
+                pass
 
             closure = closure_new
 
@@ -293,7 +283,7 @@ class Module(nn.Module):
                 raise RuntimeError("Must specify a closure instead of a parameter name when providing setting_closure")
 
             def setting_closure_new(module: Module, val: Tensor | float) -> None:
-                module.initialize(**{param: val})
+                pass
 
             setting_closure = setting_closure_new
 
@@ -350,9 +340,7 @@ class Module(nn.Module):
 
     def train(self, mode=True):
         # If we're going in training mode, we need to clear any pre-comptued caches from eval mode
-        if (self.training and not mode) or mode:
-            self._clear_cache()
-        return super().train(mode=mode)
+        pass
 
     def constraint_for_parameter_name(self, param_name: str) -> Interval | None:
         base_module = self
@@ -375,60 +363,29 @@ class Module(nn.Module):
     def _load_state_hook_ignore_shapes(
         self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
     ):
-        if not self._load_strict_shapes:
-            local_name_params = itertools.chain(self._parameters.items(), self._buffers.items())
-            local_state = {k: v for k, v in local_name_params if v is not None}
-
-            for name, param in local_state.items():
-                key = prefix + name
-                if key in state_dict:
-                    param.data = state_dict[key].data
+        pass
 
     def _load_from_state_dict(
         self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
     ):
         # If we're loading from a state dict, we need to clear any precomputed caches
-        self._clear_cache()
-        super()._load_from_state_dict(
-            state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
-        )
+        pass
 
     def load_strict_shapes(self, value):
-        def apply_fn(module):
-            module._load_strict_shapes = value
-
-        self.apply(apply_fn)
+        pass
 
     def named_parameters_and_constraints(self) -> Iterator[tuple[str, nn.Parameter, Interval | None]]:
-        for name, param in self.named_parameters():
-            yield name, param, self.constraint_for_parameter_name(name)
+        pass
 
     def sample_from_prior(self, prior_name: str) -> None:
         """Sample parameter values from prior. Modifies the module's parameters in-place."""
-        if prior_name not in self._priors:
-            raise RuntimeError(f"Unknown prior name '{prior_name}'")
-        prior, _, setting_closure = self._priors[prior_name]
-        if setting_closure is None:
-            raise RuntimeError("Must provide inverse transform to be able to sample from prior.")
-        setting_closure(self, prior.sample())
+        pass
 
     def to_pyro_random_module(self) -> Module:
-        return self.to_random_module()
+        pass
 
     def to_random_module(self) -> Module:
-        random_module_cls = type("_Random" + self.__class__.__name__, (RandomModuleMixin, self.__class__), {})
-        if not isinstance(self, random_module_cls):
-            new_module = copy.deepcopy(self)
-            new_module.__class__ = random_module_cls  # hack
-        else:
-            # Unclear if this branch would ever get used in practice, but it semantically makes sense to have.
-            new_module = copy.deepcopy(self)
-
-        for mname, child in new_module.named_children():
-            if isinstance(child, Module):
-                setattr(new_module, mname, child.to_random_module())
-
-        return new_module
+        pass
 
     def pyro_sample_from_prior(self) -> Module:
         """
@@ -438,8 +395,7 @@ class Module(nn.Module):
         This method can be used in a Pyro model to conveniently define pyro sample sites for all
         parameters of the model that have GPyTorch priors registered to them.
         """
-        new_module = self.to_pyro_random_module()
-        return _pyro_sample_from_prior(module=new_module, memo=None, prefix="")
+        pass
 
     def local_load_samples(self, samples_dict: SamplesDict, memo: MutableSet[Prior], prefix: str) -> None:
         """
@@ -450,14 +406,7 @@ class Module(nn.Module):
         want to add additional functionality, such as reshaping things to account for the fact that parameters will
         acquire an extra batch dimension corresponding to the number of samples drawn.
         """
-        self._strict(False)
-        for name, (prior, _, setting_closure) in self._priors.items():
-            if prior is not None and prior not in memo:
-                memo.add(prior)
-                if setting_closure is None:
-                    raise RuntimeError("Must provide setting_closure to load samples.")
-                setting_closure(self, samples_dict[prefix + ("." if prefix else "") + name])
-        self._strict(True)
+        pass
 
     def pyro_load_from_samples(self, samples_dict: SamplesDict) -> None:
         """
@@ -471,117 +420,43 @@ class Module(nn.Module):
         Args:
             samples_dict: Dictionary mapping *prior names* to sample values.
         """
-        _pyro_load_from_samples(module=self, samples_dict=samples_dict, memo=None, prefix="")
+        pass
 
     def update_added_loss_term(self, name, added_loss_term):
-        from .mlls import AddedLossTerm
-
-        if not isinstance(added_loss_term, AddedLossTerm):
-            raise RuntimeError("added_loss_term must be a AddedLossTerm")
-        if name not in self._added_loss_terms.keys():
-            raise RuntimeError(f"added_loss_term {name} not registered")
-        self._added_loss_terms[name] = added_loss_term
+        pass
 
     def variational_parameters(self):
-        for _, param in self.named_variational_parameters():
-            yield param
+        pass
 
 
 def _validate_module_outputs(outputs):
-    if isinstance(outputs, tuple):
-        if not all(isinstance(output, (Tensor, Distribution, LinearOperator)) for output in outputs):
-            raise RuntimeError(
-                "All outputs must be a torch.Tensor, Distribution, or LinearOperator. "
-                "Got {}".format([output.__class__.__name__ for output in outputs])
-            )
-        if len(outputs) == 1:
-            outputs = outputs[0]
-        return outputs
-    elif isinstance(outputs, (Tensor, Distribution, LinearOperator)):
-        return outputs
-    else:
-        raise RuntimeError(
-            f"Output must be a torch.Tensor, Distribution, or LinearOperator. Got {outputs.__class__.__name__}"
-        )
+    pass
 
 
 def _set_strict(module: nn.Module, value: bool) -> None:
-    if hasattr(module, "_strict_init"):
-        module._strict_init = value
-
-    for mname, module_ in module.named_children():
-        _set_strict(module_, value)
+    pass
 
 
 def _pyro_sample_from_prior(
     module: NnModuleSelf, memo: MutableSet[Prior] | None = None, prefix: str = ""
 ) -> NnModuleSelf:
-    try:
-        import pyro
-    except ImportError:
-        raise RuntimeError("Cannot call pyro_sample_from_prior without pyro installed!")
-
-    if memo is None:
-        memo = set()
-    if isinstance(module, Module):
-        for prior_name, (prior, closure, setting_closure) in module._priors.items():
-            if prior is not None and prior not in memo:
-                if setting_closure is None:
-                    raise RuntimeError(
-                        "Cannot use Pyro for sampling without a setting_closure for each prior,"
-                        f" but the following prior had none: {prior_name}, {prior}."
-                    )
-                memo.add(prior)
-                prior = prior.expand(closure(module).shape)
-                value = pyro.sample(prefix + ("." if prefix else "") + prior_name, prior)
-                setting_closure(module, value)
-
-    for mname, module_ in module.named_children():
-        submodule_prefix = prefix + ("." if prefix else "") + mname
-        _pyro_sample_from_prior(module=module_, memo=memo, prefix=submodule_prefix)
-
-    return module
+    pass
 
 
 def _pyro_load_from_samples(
     module: nn.Module, samples_dict: SamplesDict, memo: MutableSet[Prior] | None = None, prefix: str = ""
 ) -> None:
-    if memo is None:
-        memo = set()
-    if isinstance(module, Module):
-        module.local_load_samples(samples_dict, memo, prefix)
-
-    for mname, module_ in module.named_children():
-        submodule_prefix = prefix + ("." if prefix else "") + mname
-        _pyro_load_from_samples(module_, samples_dict, memo=memo, prefix=submodule_prefix)
+    pass
 
 
 def _extract_named_added_loss_terms(module, memo=None, prefix=""):
-    if memo is None:
-        memo = set()
-    if hasattr(module, "_added_loss_terms"):
-        for name, strategy in module._added_loss_terms.items():
-            if strategy is not None and strategy not in memo:
-                memo.add(strategy)
-                yield prefix + ("." if prefix else "") + name, strategy
-    for mname, module_ in module.named_children():
-        submodule_prefix = prefix + ("." if prefix else "") + mname
-        for name, strategy in _extract_named_added_loss_terms(module=module_, memo=memo, prefix=submodule_prefix):
-            yield name, strategy
+    pass
 
 
 def _extract_named_priors(
     module: nn.Module, prefix: str = ""
 ) -> Iterator[tuple[str, nn.Module, Prior, Closure, SettingClosure | None]]:
-    if isinstance(module, Module):
-        for name, (prior, closure, inv_closure) in module._priors.items():
-            if prior is not None:
-                full_name = ("." if prefix else "").join([prefix, name])
-                yield full_name, module, prior, closure, inv_closure
-    for mname, module_ in module.named_children():
-        submodule_prefix = prefix + ("." if prefix else "") + mname
-        for name, parent_module, prior, closure, inv_closure in _extract_named_priors(module_, prefix=submodule_prefix):
-            yield name, parent_module, prior, closure, inv_closure
+    pass
 
 
 def _extract_named_constraints(

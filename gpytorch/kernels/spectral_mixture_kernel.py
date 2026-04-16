@@ -117,42 +117,36 @@ class SpectralMixtureKernel(Kernel):
 
     @property
     def mixture_scales(self):
-        return self.raw_mixture_scales_constraint.transform(self.raw_mixture_scales)
+        pass
 
     @mixture_scales.setter
     def mixture_scales(self, value: torch.Tensor | float):
-        self._set_mixture_scales(value)
+        pass
 
     def _set_mixture_scales(self, value: torch.Tensor | float):
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(self.raw_mixture_scales)
-        self.initialize(raw_mixture_scales=self.raw_mixture_scales_constraint.inverse_transform(value))
+        pass
 
     @property
     def mixture_means(self):
-        return self.raw_mixture_means_constraint.transform(self.raw_mixture_means)
+        pass
 
     @mixture_means.setter
     def mixture_means(self, value: torch.Tensor | float):
-        self._set_mixture_means(value)
+        pass
 
     def _set_mixture_means(self, value: torch.Tensor | float):
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(self.raw_mixture_means)
-        self.initialize(raw_mixture_means=self.raw_mixture_means_constraint.inverse_transform(value))
+        pass
 
     @property
     def mixture_weights(self):
-        return self.raw_mixture_weights_constraint.transform(self.raw_mixture_weights)
+        pass
 
     @mixture_weights.setter
     def mixture_weights(self, value: torch.Tensor | float):
-        self._set_mixture_weights(value)
+        pass
 
     def _set_mixture_weights(self, value: torch.Tensor | float):
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(self.raw_mixture_weights)
-        self.initialize(raw_mixture_weights=self.raw_mixture_weights_constraint.inverse_transform(value))
+        pass
 
     def initialize_from_data_empspect(self, train_x: torch.Tensor, train_y: torch.Tensor):
         """
@@ -293,62 +287,9 @@ class SpectralMixtureKernel(Kernel):
             * `diag`: (`... x n x d` and `... x n x d`)
             * `diag` with `last_dim_is_batch=True`: (`... x k x n x 1` and `... x k x n x 1`)
         """
-        x1_, x2_ = x1, x2
-        if last_dim_is_batch:
-            x1_ = x1_.transpose(-1, -2).unsqueeze(-1)
-            if torch.equal(x1, x2):
-                x2_ = x1_
-            else:
-                x2_ = x2_.transpose(-1, -2).unsqueeze(-1)
-
-        if diag:
-            return x1_, x2_
-        else:
-            return x1_.unsqueeze(-2), x2_.unsqueeze(-3)
+        pass
 
     def forward(
         self, x1: torch.Tensor, x2: torch.Tensor, diag: bool = False, last_dim_is_batch: bool = False, **params
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        n, num_dims = x1.shape[-2:]
-
-        if not num_dims == self.ard_num_dims:
-            raise RuntimeError(
-                "The SpectralMixtureKernel expected the input to have {} dimensionality "
-                "(based on the ard_num_dims argument). Got {}.".format(self.ard_num_dims, num_dims)
-            )
-
-        # Expand x1 and x2 to account for the number of mixtures
-        # Should make x1/x2 (... x k x n x d) for k mixtures
-        x1_ = x1.unsqueeze(-3)
-        x2_ = x2.unsqueeze(-3)
-
-        # Compute distances - scaled by appropriate parameters
-        x1_exp = x1_ * self.mixture_scales
-        x2_exp = x2_ * self.mixture_scales
-        x1_cos = x1_ * self.mixture_means
-        x2_cos = x2_ * self.mixture_means
-
-        # Create grids
-        x1_exp_, x2_exp_ = self._create_input_grid(x1_exp, x2_exp, diag=diag, **params)
-        x1_cos_, x2_cos_ = self._create_input_grid(x1_cos, x2_cos, diag=diag, **params)
-
-        # Compute the exponential and cosine terms
-        exp_term = (x1_exp_ - x2_exp_).pow_(2).mul_(-2 * math.pi**2)
-        cos_term = (x1_cos_ - x2_cos_).mul_(2 * math.pi)
-        res = exp_term.exp_() * cos_term.cos_()
-
-        # Sum over mixtures
-        mixture_weights = self.mixture_weights.view(*self.mixture_weights.shape, 1, 1)
-        if not diag:
-            mixture_weights = mixture_weights.unsqueeze(-2)
-
-        res = (res * mixture_weights).sum(-3 if diag else -4)
-
-        # Product over dimensions
-        if last_dim_is_batch:
-            # Put feature-dimension in front of data1/data2 dimensions
-            res = res.permute(*list(range(0, res.dim() - 3)), -1, -3, -2)
-        else:
-            res = res.prod(-1)
-
-        return res
+        pass

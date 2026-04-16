@@ -26,9 +26,4 @@ class DeepPredictiveLogLikelihood(_ApproximateMarginalLogLikelihood):
         super().__init__(likelihood, model, num_data, beta, combine_terms)
 
     def _log_likelihood_term(self, approximate_dist_f, target, **kwargs):
-        base_log_marginal = self.likelihood.log_marginal(target, approximate_dist_f, **kwargs)
-        deep_log_marginal = self.model.quad_weights.unsqueeze(-1) + base_log_marginal
-
-        deep_log_prob = deep_log_marginal.logsumexp(dim=0)
-
-        return deep_log_prob.sum(-1)
+        pass

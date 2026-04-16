@@ -84,11 +84,11 @@ class ExactGP(GP):
 
     @property
     def train_targets(self) -> tuple[Tensor] | None:
-        return self._train_targets
+        pass
 
     @train_targets.setter
     def train_targets(self, value: Tensor | None) -> None:
-        object.__setattr__(self, "_train_targets", value)
+        pass
 
     def _apply(self, fn):
         if self.train_inputs is not None:
@@ -98,17 +98,13 @@ class ExactGP(GP):
 
     def _clear_cache(self) -> None:
         # The precomputed caches from test time live in prediction_strategy
-        self.prediction_strategy = None
+        pass
 
     def local_load_samples(self, samples_dict, memo, prefix):
         """
         Replace the model's learned hyperparameters with samples from a posterior distribution.
         """
-        # Pyro always puts the samples in the first batch dimension
-        num_samples = next(iter(samples_dict.values())).size(0)
-        self.train_inputs = tuple(tri.unsqueeze(0).expand(num_samples, *tri.shape) for tri in self.train_inputs)
-        self.train_targets = self.train_targets.unsqueeze(0).expand(num_samples, *self.train_targets.shape)
-        super().local_load_samples(samples_dict, memo, prefix)
+        pass
 
     def set_train_data(
         self, inputs: Tensor | Iterable[Tensor] | None = None, targets: Tensor | None = None, strict: bool = True
@@ -122,31 +118,7 @@ class ExactGP(GP):
             dtype, and device as the current inputs and targets. Otherwise, any
             shape/dtype/device are allowed.
         """
-        if inputs is not None:
-            if isinstance(inputs, Tensor):
-                inputs = (inputs,)
-            inputs = tuple(input_.unsqueeze(-1) if input_.ndimension() == 1 else input_ for input_ in inputs)
-            if strict:
-                for input_, t_input in zip(inputs, self.train_inputs or (None,), strict=True):
-                    for attr in {"shape", "dtype", "device"}:
-                        expected_attr = getattr(t_input, attr, None)
-                        found_attr = getattr(input_, attr, None)
-                        if expected_attr != found_attr:
-                            msg = "Cannot modify {attr} of inputs (expected {e_attr}, found {f_attr})."
-                            msg = msg.format(attr=attr, e_attr=expected_attr, f_attr=found_attr)
-                            raise RuntimeError(msg)
-            self.train_inputs = inputs
-        if targets is not None:
-            if strict:
-                for attr in {"shape", "dtype", "device"}:
-                    expected_attr = getattr(self.train_targets, attr, None)
-                    found_attr = getattr(targets, attr, None)
-                    if expected_attr != found_attr:
-                        msg = "Cannot modify {attr} of targets (expected {e_attr}, found {f_attr})."
-                        msg = msg.format(attr=attr, e_attr=expected_attr, f_attr=found_attr)
-                        raise RuntimeError(msg)
-            self.train_targets = targets
-        self.prediction_strategy = None
+        pass
 
     def get_fantasy_model(self, inputs, targets, **kwargs):
         """
@@ -167,100 +139,7 @@ class ExactGP(GP):
             and all test-time caches have been updated.
         :rtype: ~gpytorch.models.ExactGP
         """
-        if self.prediction_strategy is None:
-            raise RuntimeError(
-                "Fantasy observations can only be added after making predictions with a model so that "
-                "all test independent caches exist. Call the model on some data first!"
-            )
-
-        model_batch_shape = self.train_inputs[0].shape[:-2]
-
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-
-        inputs = [i.unsqueeze(-1) if i.ndimension() == 1 else i for i in inputs]
-
-        if not isinstance(self.prediction_strategy.train_prior_dist, MultitaskMultivariateNormal):
-            data_dim_start = -1
-        else:
-            data_dim_start = -2
-
-        target_batch_shape = targets.shape[:data_dim_start]
-        input_batch_shape = inputs[0].shape[:-2]
-        tbdim, ibdim = len(target_batch_shape), len(input_batch_shape)
-
-        if not (tbdim == ibdim + 1 or tbdim == ibdim):
-            raise RuntimeError(
-                f"Unsupported batch shapes: The target batch shape ({target_batch_shape}) must have either the "
-                f"same dimension as or one more dimension than the input batch shape ({input_batch_shape})"
-            )
-
-        # Check whether we can properly broadcast batch dimensions
-        try:
-            torch.broadcast_shapes(model_batch_shape, target_batch_shape)
-        except RuntimeError:
-            raise RuntimeError(
-                f"Model batch shape ({model_batch_shape}) and target batch shape "
-                f"({target_batch_shape}) are not broadcastable."
-            )
-
-        if len(model_batch_shape) > len(input_batch_shape):
-            input_batch_shape = model_batch_shape
-        if len(model_batch_shape) > len(target_batch_shape):
-            target_batch_shape = model_batch_shape
-
-        # If input has no fantasy batch dimension but target does, we can save memory and computation by not
-        # computing the covariance for each element of the batch. Therefore we don't expand the inputs to the
-        # size of the fantasy model here - this is done below, after the evaluation and fast fantasy update
-        train_inputs = [tin.expand(input_batch_shape + tin.shape[-2:]) for tin in self.train_inputs]
-        train_targets = self.train_targets.expand(target_batch_shape + self.train_targets.shape[data_dim_start:])
-
-        full_inputs = [
-            torch.cat(
-                [train_input, input.expand(input_batch_shape + input.shape[-2:])],
-                dim=-2,
-            )
-            for train_input, input in zip(train_inputs, inputs, strict=True)
-        ]
-        full_targets = torch.cat(
-            [train_targets, targets.expand(target_batch_shape + targets.shape[data_dim_start:])], dim=data_dim_start
-        )
-
-        try:
-            fantasy_kwargs = {"noise": kwargs.pop("noise")}
-        except KeyError:
-            fantasy_kwargs = {}
-
-        full_output = super().__call__(*full_inputs, **kwargs)
-
-        # Copy model without copying training data or prediction strategy (since we'll overwrite those)
-        old_pred_strat = self.prediction_strategy
-        old_train_inputs = self.train_inputs
-        old_train_targets = self.train_targets
-        old_likelihood = self.likelihood
-        self.prediction_strategy = None
-        self.train_inputs = None
-        self.train_targets = None
-        self.likelihood = None
-        new_model = deepcopy(self)
-        self.prediction_strategy = old_pred_strat
-        self.train_inputs = old_train_inputs
-        self.train_targets = old_train_targets
-        self.likelihood = old_likelihood
-
-        new_model.likelihood = old_likelihood.get_fantasy_likelihood(**fantasy_kwargs)
-        new_model.prediction_strategy = old_pred_strat.get_fantasy_strategy(
-            inputs, targets, full_inputs, full_targets, full_output, **fantasy_kwargs
-        )
-
-        # if the fantasies are at the same points, we need to expand the inputs for the new model
-        if tbdim == ibdim + 1:
-            new_model.train_inputs = [fi.expand(target_batch_shape + fi.shape[-2:]) for fi in full_inputs]
-        else:
-            new_model.train_inputs = full_inputs
-        new_model.train_targets = full_targets
-
-        return new_model
+        pass
 
     def __call__(self, *args, **kwargs):
         train_inputs = list(self.train_inputs) if self.train_inputs is not None else []
@@ -348,9 +227,7 @@ class ExactGP(GP):
         Returns:
             The prior distribution evaluated on the training set.
         """
-        # No prior_mode context needed: super().__call__() bypasses ExactGP.__call__
-        # and goes directly to Module.__call__() -> forward(), which computes the prior.
-        return super().__call__(*train_inputs, **kwargs)
+        pass
 
     def _get_test_prior_mean_and_covariances(
         self,
@@ -380,51 +257,4 @@ class ExactGP(GP):
             A tuple of (test_mean, test_test_covar, test_train_covar, batch_shape,
             test_shape, posterior_class).
         """
-        # Concatenate the input to the training input
-        full_inputs = []
-        batch_shape = train_inputs[0].shape[:-2]
-        for train_input, input in zip(train_inputs, test_inputs, strict=True):
-            # Make sure the batch shapes agree for training/test data
-            if batch_shape != train_input.shape[:-2]:
-                batch_shape = torch.broadcast_shapes(batch_shape, train_input.shape[:-2])
-                train_input = train_input.expand(*batch_shape, *train_input.shape[-2:])
-            if batch_shape != input.shape[:-2]:
-                batch_shape = torch.broadcast_shapes(batch_shape, input.shape[:-2])
-                train_input = train_input.expand(*batch_shape, *train_input.shape[-2:])
-                input = input.expand(*batch_shape, *input.shape[-2:])
-            full_inputs.append(torch.cat([train_input, input], dim=-2))
-
-        # Get joint distribution (lazy when settings.lazily_evaluate_kernels is True)
-        full_output = super().__call__(*full_inputs, **kwargs)
-        if settings.debug().on():
-            if not isinstance(full_output, MultivariateNormal):
-                raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
-        joint_mean, joint_covar = full_output.loc, full_output.lazy_covariance_matrix
-
-        # Determine the shape of the joint distribution
-        batch_shape = full_output.batch_shape
-        joint_shape = full_output.event_shape
-        # For single-task GPs: event_shape = (num_points,), so tasks_shape = ()
-        # For multitask GPs: event_shape = (num_points, num_tasks), so tasks_shape = (num_tasks,)
-        # This captures any task dimensions beyond the primary data dimension.
-        tasks_shape = joint_shape[1:]
-
-        # Compute test_shape: the event shape for test predictions.
-        # For single-task GPs: test_shape = (num_test,)
-        # For multitask GPs: test_shape = (num_test, num_tasks)
-        num_test = joint_shape[0] - self.prediction_strategy.train_shape[0]
-        test_shape = torch.Size([num_test, *tasks_shape])
-
-        # Find the components of the distribution that contain test data
-        num_train = self.prediction_strategy.num_train
-        test_mean = joint_mean[..., num_train:]
-
-        # Extract test covariances. Slicing is lazy; K(train, train) is never computed.
-        # evaluate_kernel() converts to the linear operator type needed by prediction.
-        # NOTE: We must slice row and column indices together (not sequentially) for
-        # compatibility with BlockInterleavedLinearOperator used in multitask GPs.
-        test_test_covar = joint_covar[..., num_train:, num_train:].evaluate_kernel()
-        test_train_covar = joint_covar[..., num_train:, :num_train].evaluate_kernel()
-
-        posterior_class = full_output.__class__
-        return (test_mean, test_test_covar, test_train_covar, batch_shape, test_shape, posterior_class)
+        pass

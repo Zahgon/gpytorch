@@ -36,18 +36,18 @@ class _HomoskedasticNoiseBase(Noise):
         self.register_constraint("raw_noise", noise_constraint)
 
     def _noise_param(self, m):
-        return m.noise
+        pass
 
     def _noise_closure(self, m, v):
-        return m._set_noise(v)
+        pass
 
     @property
     def noise(self):
-        return self.raw_noise_constraint.transform(self.raw_noise)
+        pass
 
     @noise.setter
     def noise(self, value: Tensor) -> None:
-        self._set_noise(value)
+        pass
 
     def _set_noise(self, value: Tensor) -> None:
         if not torch.is_tensor(value):
@@ -73,23 +73,7 @@ class _HomoskedasticNoiseBase(Noise):
 
         If a "noise" kwarg (a Tensor) is provided, this noise is used directly.
         """
-        if "noise" in kwargs:
-            return DiagLinearOperator(kwargs.get("noise"))
-        if shape is None:
-            p = params[0] if torch.is_tensor(params[0]) else params[0][0]
-            shape = p.shape if len(p.shape) == 1 else p.shape[:-1]
-        noise = self.noise
-        *batch_shape, n = shape
-        noise_batch_shape = noise.shape[:-1] if noise.dim() > 1 else torch.Size()
-        num_tasks = noise.shape[-1]
-        batch_shape = torch.broadcast_shapes(noise_batch_shape, batch_shape)
-        noise = noise.unsqueeze(-2)
-        noise_diag = noise.expand(*batch_shape, 1, num_tasks).contiguous()
-        if num_tasks == 1:
-            noise_diag = noise_diag.view(*batch_shape, 1)
-        if noise_diag.shape[-1] != 1:
-            noise_diag = noise_diag.unsqueeze(-1)
-        return ConstantDiagLinearOperator(noise_diag, diag_shape=n)
+        pass
 
 
 class HomoskedasticNoise(_HomoskedasticNoiseBase):
@@ -122,24 +106,7 @@ class HeteroskedasticNoise(Noise):
         shape: torch.Size | None = None,
         noise: Tensor | None = None,
     ) -> DiagLinearOperator:
-        if noise is not None:
-            return DiagLinearOperator(noise)
-        training = self.noise_model.training  # keep track of mode
-        try:
-            self.noise_model.eval()  # we want the posterior prediction of the noise model
-            with settings.detach_test_caches(False), settings.debug(False):
-                if len(params) == 1 and not torch.is_tensor(params[0]):
-                    output = self.noise_model(*params[0])
-                else:
-                    output = self.noise_model(*params)
-        finally:
-            self.noise_model.train(training)
-        if not isinstance(output, MultivariateNormal):
-            raise NotImplementedError("Currently only noise models that return a MultivariateNormal are supported")
-        # note: this also works with MultitaskMultivariateNormal, where this
-        # will return a batched DiagLinearOperators of size n x num_tasks x num_tasks
-        noise_diag = output.mean if self._noise_indices is None else output.mean[..., self._noise_indices]
-        return DiagLinearOperator(self._noise_constraint.transform(noise_diag))
+        pass
 
 
 class FixedGaussianNoise(Module):
@@ -159,16 +126,7 @@ class FixedGaussianNoise(Module):
     def forward(
         self, *params: Any, shape: torch.Size | None = None, noise: Tensor | None = None, **kwargs: Any
     ) -> DiagLinearOperator:
-        if shape is None:
-            p = params[0] if torch.is_tensor(params[0]) else params[0][0]
-            shape = p.shape if len(p.shape) == 1 else p.shape[:-1]
-
-        if noise is not None:
-            return DiagLinearOperator(noise)
-        elif shape[-1] == self.noise.shape[-1]:
-            return DiagLinearOperator(self.noise)
-        else:
-            return ZeroLinearOperator()
+        pass
 
     def _apply(self, fn):
         self.noise = fn(self.noise)

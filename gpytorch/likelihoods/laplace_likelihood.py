@@ -46,11 +46,11 @@ class LaplaceLikelihood(_OneDimensionalLikelihood):
 
     @property
     def noise(self) -> Tensor:
-        return self.raw_noise_constraint.transform(self.raw_noise)
+        pass
 
     @noise.setter
     def noise(self, value: Tensor) -> None:
-        self._set_noise(value)
+        pass
 
     def _set_noise(self, value: Tensor) -> None:
         if not torch.is_tensor(value):
@@ -58,4 +58,4 @@ class LaplaceLikelihood(_OneDimensionalLikelihood):
         self.initialize(raw_noise=self.raw_noise_constraint.inverse_transform(value))
 
     def forward(self, function_samples: Tensor, *args: Any, **kwargs: Any) -> Laplace:
-        return base_distributions.Laplace(loc=function_samples, scale=self.noise.sqrt())
+        pass

@@ -59,7 +59,7 @@ class ScaleKernel(Kernel):
         """
         Kernel is stationary if base kernel is stationary.
         """
-        return self.base_kernel.is_stationary
+        pass
 
     def __init__(
         self,
@@ -87,38 +87,27 @@ class ScaleKernel(Kernel):
         self.register_constraint("raw_outputscale", outputscale_constraint)
 
     def _outputscale_param(self, m):
-        return m.outputscale
+        pass
 
     def _outputscale_closure(self, m, v):
-        m._set_outputscale(v)
+        pass
 
     @property
     def outputscale(self):
-        return self.raw_outputscale_constraint.transform(self.raw_outputscale)
+        pass
 
     @outputscale.setter
     def outputscale(self, value):
-        self._set_outputscale(value)
+        pass
 
     def _set_outputscale(self, value):
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(self.raw_outputscale)
-        self.initialize(raw_outputscale=self.raw_outputscale_constraint.inverse_transform(value))
+        pass
 
     def forward(self, x1, x2, last_dim_is_batch=False, diag=False, **params):
-        orig_output = self.base_kernel.forward(x1, x2, diag=diag, last_dim_is_batch=last_dim_is_batch, **params)
-        outputscales = self.outputscale
-        if last_dim_is_batch:
-            outputscales = outputscales.unsqueeze(-1)
-        if diag:
-            outputscales = outputscales.unsqueeze(-1)
-            return to_dense(orig_output) * outputscales
-        else:
-            outputscales = outputscales.view(*outputscales.shape, 1, 1)
-            return orig_output.mul(outputscales)
+        pass
 
     def num_outputs_per_input(self, x1, x2):
-        return self.base_kernel.num_outputs_per_input(x1, x2)
+        pass
 
     def prediction_strategy(self, train_inputs, train_prior_dist, train_labels, likelihood):
         return self.base_kernel.prediction_strategy(train_inputs, train_prior_dist, train_labels, likelihood)

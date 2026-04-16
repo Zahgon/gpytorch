@@ -34,8 +34,7 @@ class DeltaVariationalDistribution(_VariationalDistribution):
         self.register_parameter(name="variational_mean", parameter=torch.nn.Parameter(mean_init))
 
     def forward(self) -> Distribution:
-        return Delta(self.variational_mean)
+        pass
 
     def initialize_variational_distribution(self, prior_dist: MultivariateNormal) -> None:
-        self.variational_mean.data.copy_(prior_dist.mean)
-        self.variational_mean.data.add_(torch.randn_like(prior_dist.mean), alpha=self.mean_init_std)
+        pass

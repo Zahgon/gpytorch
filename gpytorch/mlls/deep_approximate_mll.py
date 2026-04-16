@@ -26,7 +26,7 @@ class DeepApproximateMLL(_ApproximateMarginalLogLikelihood):
         self.base_mll = base_mll
 
     def _log_likelihood_term(self, approximate_dist_f, target, **kwargs):
-        return self.base_mll._log_likelihood_term(approximate_dist_f, target, **kwargs).mean(0)
+        pass
 
     def forward(self, approximate_dist_f, target, **kwargs):
-        return self.base_mll.forward(approximate_dist_f, target, **kwargs).mean(0)
+        pass

@@ -69,7 +69,7 @@ class ApproximateGP(GP, _PyroMixin):
             term by.
         :param name_prefix: (default="") A name prefix to prepend to pyro sample sites.
         """
-        return super().pyro_guide(input, beta=beta, name_prefix=name_prefix)
+        pass
 
     def pyro_model(self, input: Tensor, beta: float = 1.0, name_prefix: str = "") -> Tensor:
         r"""
@@ -82,7 +82,7 @@ class ApproximateGP(GP, _PyroMixin):
         :param name_prefix: (default="") A name prefix to prepend to pyro sample sites.
         :return: samples from :math:`q(\mathbf f)`
         """
-        return super().pyro_model(input, beta=beta, name_prefix=name_prefix)
+        pass
 
     def get_fantasy_model(self, inputs: Tensor, targets: Tensor, **kwargs: Any) -> ExactGP:
         r"""
@@ -108,7 +108,7 @@ class ApproximateGP(GP, _PyroMixin):
             https://papers.nips.cc/paper/2021/hash/325eaeac5bef34937cfdc1bd73034d17-Abstract.html
 
         """
-        return self.variational_strategy.get_fantasy_model(inputs=inputs, targets=targets, **kwargs)
+        pass
 
     def __call__(self, inputs: Tensor | None, prior: bool = False, **kwargs) -> MultivariateNormal:
         if inputs is not None and inputs.dim() == 1:

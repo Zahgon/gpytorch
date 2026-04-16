@@ -52,12 +52,7 @@ class _dtype_value_context:
 
     @classmethod
     def _set_value(cls, float_value, double_value, half_value):
-        if float_value is not None:
-            cls._global_float_value = float_value
-        if double_value is not None:
-            cls._global_double_value = double_value
-        if half_value is not None:
-            cls._global_half_value = half_value
+        pass
 
     def __init__(self, float_value=None, double_value=None, half_value=None):
         self._orig_float_value = self.__class__.value(torch.float)
@@ -105,7 +100,7 @@ class _feature_flag:
 
     @classmethod
     def _set_state(cls, state):
-        cls._state = state
+        pass
 
     def __init__(self, state=True):
         self.prev = self.__class__._state
@@ -128,7 +123,7 @@ class _value_context:
 
     @classmethod
     def _set_value(cls, value):
-        cls._global_value = value
+        pass
 
     def __init__(self, value):
         self._orig_value = self.__class__.value()
@@ -206,7 +201,7 @@ class fast_pred_var(_feature_flag):
 
     @classmethod
     def _set_num_probe_vectors(cls, value):
-        cls._num_probe_vectors = value
+        pass
 
     def __init__(self, state=True, num_probe_vectors=1):
         self.orig_value = self.__class__.num_probe_vectors()
@@ -436,7 +431,7 @@ class observation_nan_policy(_value_context):
             dimensions.
         :return: The mask to the event dimensions of the observations.
         """
-        return ~torch.any(torch.isnan(observations.reshape(-1, *event_shape)), dim=0)
+        pass
 
     @classmethod
     def _fill_tensor(cls, observations) -> Tensor:
@@ -447,7 +442,7 @@ class observation_nan_policy(_value_context):
         :param Tensor observations: The tensor to fill with values.
         :return: The filled in observations.
         """
-        return torch.nan_to_num(observations, nan=cls._fill_value)
+        pass
 
 
 class use_keops(_feature_flag):

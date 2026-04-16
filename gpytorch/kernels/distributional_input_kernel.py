@@ -39,13 +39,4 @@ class DistributionalInputKernel(Kernel):
         self.distance_function = distance_function
 
     def forward(self, x1, x2, diag=False, *args, **kwargs):
-        negative_covar_func = -self.distance_function(x1, x2)
-        res = negative_covar_func.div(self.lengthscale).exp()
-
-        if not diag:
-            return res
-        else:
-            if torch.is_tensor(res):
-                return res.diagonal(dim1=-1, dim2=-2)
-            else:
-                return res.diagonal(dim1=-1, dim2=-2)  # For LinearOperator
+        pass

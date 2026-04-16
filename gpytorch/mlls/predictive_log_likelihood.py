@@ -59,7 +59,7 @@ class PredictiveLogLikelihood(_ApproximateMarginalLogLikelihood):
     """
 
     def _log_likelihood_term(self, approximate_dist_f, target, **kwargs):
-        return self.likelihood.log_marginal(target, approximate_dist_f, **kwargs).sum(-1)
+        pass
 
     def forward(self, approximate_dist_f, target, **kwargs):
         r"""
@@ -75,4 +75,4 @@ class PredictiveLogLikelihood(_ApproximateMarginalLogLikelihood):
         :rtype: torch.Tensor
         :return: Predictive log likelihood. Output shape corresponds to batch shape of the model/input data.
         """
-        return super().forward(approximate_dist_f, target, **kwargs)
+        pass

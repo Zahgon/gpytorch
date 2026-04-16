@@ -72,9 +72,7 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
 
         :param sample_shape: the size of the sample to be drawn.
         """
-        if not isinstance(sample_shape, torch.Size):
-            sample_shape = torch.Size(sample_shape)
-        return sample_shape + self._batch_shape + self.base_sample_shape
+        pass
 
     @staticmethod
     def _repr_sizes(mean: Tensor, covariance_matrix: Tensor | LinearOperator) -> str:
@@ -82,18 +80,11 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
 
     @property
     def _unbroadcasted_scale_tril(self) -> Tensor:
-        if self.islazy and self.__unbroadcasted_scale_tril is None:
-            # cache root decomposition
-            ust = to_dense(self.lazy_covariance_matrix.cholesky())
-            self.__unbroadcasted_scale_tril = ust
-        return self.__unbroadcasted_scale_tril
+        pass
 
     @_unbroadcasted_scale_tril.setter
     def _unbroadcasted_scale_tril(self, ust: Tensor):
-        if self.islazy:
-            raise NotImplementedError("Cannot set _unbroadcasted_scale_tril for lazy MVN distributions")
-        else:
-            self.__unbroadcasted_scale_tril = ust
+        pass
 
     def add_jitter(self, noise: float = 1e-4) -> MultivariateNormal:
         r"""
@@ -101,22 +92,15 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
 
         :param noise: The size of the constant diagonal.
         """
-        return self.__class__(self.mean, self.lazy_covariance_matrix.add_jitter(noise))
+        pass
 
     @property
     def base_sample_shape(self) -> torch.Size:
-        base_sample_shape = self.event_shape
-        if isinstance(self.lazy_covariance_matrix, RootLinearOperator):
-            base_sample_shape = self.lazy_covariance_matrix.root.shape[-1:]
-
-        return base_sample_shape
+        pass
 
     @lazy_property
     def covariance_matrix(self) -> Tensor:
-        if self.islazy:
-            return self._covar.to_dense()
-        else:
-            return super().covariance_matrix
+        pass
 
     def confidence_region(self) -> tuple[Tensor, Tensor]:
         """
@@ -126,9 +110,7 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
             dimensionality of the random variable. The first (second) Tensor is the
             lower (upper) end of the confidence region.
         """
-        std2 = self.stddev.mul_(2)
-        mean = self.mean
-        return mean.sub(std2), mean.add(std2)
+        pass
 
     def expand(self, batch_size: torch.Size) -> MultivariateNormal:
         r"""
@@ -206,17 +188,11 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
         :param sample_shape: The number of samples to generate. (Default: `torch.Size([])`.)
         :return: A `*sample_shape x *batch_shape x N` tensor of i.i.d. standard Normal samples.
         """
-        with torch.no_grad():
-            shape = self._extended_shape(sample_shape)
-            base_samples = _standard_normal(shape, dtype=self.loc.dtype, device=self.loc.device)
-        return base_samples
+        pass
 
     @lazy_property
     def lazy_covariance_matrix(self) -> LinearOperator:
-        if self.islazy:
-            return self._covar
-        else:
-            return to_linear_operator(super().covariance_matrix)
+        pass
 
     def log_prob(self, value: Tensor) -> Tensor:
         r"""
@@ -274,50 +250,7 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
             reparameterize. (Default: None.)
         :return: A `*sample_shape x *batch_shape x N` tensor of i.i.d. reparameterized samples.
         """
-        covar = self.lazy_covariance_matrix
-        if base_samples is None:
-            # Create some samples
-            num_samples = sample_shape.numel() or 1
-
-            # Get samples
-            res = covar.zero_mean_mvn_samples(num_samples) + self.loc.unsqueeze(0)
-            res = res.view(sample_shape + self.loc.shape)
-
-        else:
-            covar_root = covar.root_decomposition().root
-
-            # Make sure that the base samples agree with the distribution
-            if (
-                self.loc.shape != base_samples.shape[-self.loc.dim() :]
-                and covar_root.shape[-1] < base_samples.shape[-1]
-            ):
-                raise RuntimeError(
-                    "The size of base_samples (minus sample shape dimensions) should agree with the size "
-                    "of self.loc. Expected ...{} but got {}".format(self.loc.shape, base_samples.shape)
-                )
-
-            # Determine what the appropriate sample_shape parameter is
-            sample_shape = base_samples.shape[: base_samples.dim() - self.loc.dim()]
-
-            # Reshape samples to be batch_size x num_dim x num_samples
-            # or num_bim x num_samples
-            base_samples = base_samples.view(-1, *self.loc.shape[:-1], covar_root.shape[-1])
-            base_samples = base_samples.permute(*range(1, self.loc.dim() + 1), 0)
-
-            # Now reparameterize those base samples
-            # If necessary, adjust base_samples for rank of root decomposition
-            if covar_root.shape[-1] < base_samples.shape[-2]:
-                base_samples = base_samples[..., : covar_root.shape[-1], :]
-            elif covar_root.shape[-1] > base_samples.shape[-2]:
-                # raise RuntimeError("Incompatible dimension of `base_samples`")
-                covar_root = covar_root.transpose(-2, -1)
-            res = covar_root.matmul(base_samples) + self.loc.unsqueeze(-1)
-
-            # Permute and reshape new samples to be original size
-            res = res.permute(-1, *range(self.loc.dim())).contiguous()
-            res = res.view(sample_shape + self.loc.shape)
-
-        return res
+        pass
 
     def sample(self, sample_shape: torch.Size = torch.Size(), base_samples: Tensor | None = None) -> Tensor:
         r"""
@@ -333,13 +266,12 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
             reparameterize. (Default: None.)
         :return: A `*sample_shape x *batch_shape x N` tensor of i.i.d. samples.
         """
-        with torch.no_grad():
-            return self.rsample(sample_shape=sample_shape, base_samples=base_samples)
+        pass
 
     @property
     def stddev(self) -> Tensor:
         # self.variance is guaranteed to be positive, because we do clamping.
-        return self.variance.sqrt()
+        pass
 
     def to_data_independent_dist(self) -> torch.distributions.Normal:
         """
@@ -349,37 +281,11 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
 
         :returns: A (data-independent) Normal distribution with batch shape `*batch_shape x N`.
         """
-        # Create batch distribution where all data are independent, but the tasks are dependent
-        try:
-            # If pyro is installed, use that set of base distributions
-            import pyro.distributions as base_distributions
-        except ImportError:
-            # Otherwise, use PyTorch
-            import torch.distributions as base_distributions
-        return base_distributions.Normal(self.mean, self.stddev)
+        pass
 
     @property
     def variance(self) -> Tensor:
-        if self.islazy:
-            # overwrite this since torch MVN uses unbroadcasted_scale_tril for this
-            diag = self.lazy_covariance_matrix.diagonal(dim1=-1, dim2=-2)
-            diag = diag.view(diag.shape[:-1] + self._event_shape)
-            variance = diag.expand(self._batch_shape + self._event_shape)
-        else:
-            variance = super().variance
-
-        # Check to make sure that variance isn't lower than minimum allowed value (default 1e-6).
-        # This ensures that all variances are positive
-        min_variance = settings.min_variance.value(variance.dtype)
-        if variance.lt(min_variance).any():
-            warnings.warn(
-                f"Negative variance values detected. "
-                "This is likely due to numerical instabilities. "
-                f"Rounding negative variances up to {min_variance}.",
-                NumericalWarning,
-            )
-            variance = variance.clamp_min(min_variance)
-        return variance
+        pass
 
     def __add__(self, other: MultivariateNormal) -> MultivariateNormal:
         if isinstance(other, MultivariateNormal):
@@ -451,28 +357,4 @@ class MultivariateNormal(TMultivariateNormal, Distribution):
 
 @register_kl(MultivariateNormal, MultivariateNormal)
 def kl_mvn_mvn(p_dist: MultivariateNormal, q_dist: MultivariateNormal) -> Tensor:
-    output_shape = torch.broadcast_shapes(p_dist.batch_shape, q_dist.batch_shape)
-    if output_shape != p_dist.batch_shape:
-        p_dist = p_dist.expand(output_shape)
-    if output_shape != q_dist.batch_shape:
-        q_dist = q_dist.expand(output_shape)
-
-    q_mean = q_dist.loc
-    q_covar = q_dist.lazy_covariance_matrix
-
-    p_mean = p_dist.loc
-    p_covar = p_dist.lazy_covariance_matrix
-    root_p_covar = p_covar.root_decomposition().root.to_dense()
-
-    mean_diffs = p_mean - q_mean
-    if isinstance(root_p_covar, LinearOperator):
-        # right now this just catches if root_p_covar is a DiagLinearOperator,
-        # but we may want to be smarter about this in the future
-        root_p_covar = root_p_covar.to_dense()
-    inv_quad_rhs = torch.cat([mean_diffs.unsqueeze(-1), root_p_covar], -1)
-    logdet_p_covar = p_covar.logdet()
-    trace_plus_inv_quad_form, logdet_q_covar = q_covar.inv_quad_logdet(inv_quad_rhs=inv_quad_rhs, logdet=True)
-
-    # Compute the KL Divergence.
-    res = 0.5 * sum([logdet_q_covar, logdet_p_covar.mul(-1), trace_plus_inv_quad_form, -float(mean_diffs.size(-1))])
-    return res
+    pass

@@ -43,7 +43,4 @@ class ConstantMeanGradGrad(Mean):
             self.register_prior("mean_prior", prior, "constant")
 
     def forward(self, input):
-        batch_shape = torch.broadcast_shapes(self.batch_shape, input.shape[:-2])
-        mean = self.constant.unsqueeze(-1).expand(*batch_shape, input.size(-2), 2 * input.size(-1) + 1).contiguous()
-        mean[..., 1:] = 0
-        return mean
+        pass

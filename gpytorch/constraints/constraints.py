@@ -64,22 +64,11 @@ class Interval(Module):
     def _load_from_state_dict(
         self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
     ):
-        result = super()._load_from_state_dict(
-            state_dict=state_dict,
-            prefix=prefix,
-            local_metadata=local_metadata,
-            strict=False,
-            missing_keys=missing_keys,
-            unexpected_keys=unexpected_keys,
-            error_msgs=error_msgs,
-        )
-        # The lower_bound and upper_bound buffers are new, and so may not be present in older state dicts
-        # Because of this, we won't have strict-mode on when loading this module
-        return result
+        pass
 
     @property
     def enforced(self) -> bool:
-        return self._transform is not None
+        pass
 
     def check(self, tensor) -> bool:
         return bool(torch.all(tensor <= self.upper_bound) and torch.all(tensor >= self.lower_bound))
@@ -140,7 +129,7 @@ class Interval(Module):
         """
         The initial parameter value (if specified, None otherwise)
         """
-        return self._initial_value
+        pass
 
     def __repr__(self) -> str:
         if self.lower_bound.numel() == 1 and self.upper_bound.numel() == 1:

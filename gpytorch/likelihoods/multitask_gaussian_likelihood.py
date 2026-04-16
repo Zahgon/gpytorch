@@ -65,13 +65,7 @@ class _MultitaskGaussianLikelihoodBase(_GaussianLikelihoodBase):
         self.rank = rank
 
     def _eval_corr_matrix(self) -> Tensor:
-        tnc = self.task_noise_corr
-        fac_diag = torch.ones(*tnc.shape[:-1], self.num_tasks, device=tnc.device, dtype=tnc.dtype)
-        Cfac = torch.diag_embed(fac_diag)
-        Cfac[..., self.tidcs[0], self.tidcs[1]] = self.task_noise_corr
-        # squared rows must sum to one for this to be a correlation matrix
-        C = Cfac / Cfac.pow(2).sum(dim=-1, keepdim=True).sqrt()
-        return C @ C.transpose(-1, -2)
+        pass
 
     def marginal(
         self, function_dist: MultitaskMultivariateNormal, *params: Any, **kwargs: Any
@@ -102,61 +96,15 @@ class _MultitaskGaussianLikelihoodBase(_GaussianLikelihoodBase):
             :obj:`~linear_operator.operators.LinearOperator` with
             :math:`\mathbf D_{t} \otimes \mathbf I_{n}` and :math:`\sigma^{2} \mathbf I_{nt}` added.
         """
-        mean, covar = function_dist.mean, function_dist.lazy_covariance_matrix
-
-        # ensure that sumKroneckerLT is actually called
-        if isinstance(covar, LazyEvaluatedKernelTensor):
-            covar = covar.evaluate_kernel()
-
-        covar_kron_lt = self._shaped_noise_covar(
-            mean.shape, add_noise=self.has_global_noise, interleaved=function_dist._interleaved
-        )
-        covar = covar + covar_kron_lt
-
-        return function_dist.__class__(mean, covar, interleaved=function_dist._interleaved)
+        pass
 
     def _shaped_noise_covar(
         self, shape: torch.Size, add_noise: bool | None = True, interleaved: bool = True, *params: Any, **kwargs: Any
     ) -> LinearOperator:
-        if not self.has_task_noise:
-            noise = ConstantDiagLinearOperator(self.noise, diag_shape=shape[-2] * self.num_tasks)
-            return noise
-
-        if self.rank == 0:
-            task_noises = self.raw_task_noises_constraint.transform(self.raw_task_noises)
-            task_var_lt = DiagLinearOperator(task_noises)
-            dtype, device = task_noises.dtype, task_noises.device
-            ckl_init = KroneckerProductDiagLinearOperator
-        else:
-            task_noise_covar_factor = self.task_noise_covar_factor
-            task_var_lt = RootLinearOperator(task_noise_covar_factor)
-            dtype, device = task_noise_covar_factor.dtype, task_noise_covar_factor.device
-            ckl_init = KroneckerProductLinearOperator
-
-        eye_lt = ConstantDiagLinearOperator(
-            torch.ones(*shape[:-2], 1, dtype=dtype, device=device), diag_shape=shape[-2]
-        )
-        task_var_lt = task_var_lt.expand(*shape[:-2], *task_var_lt.matrix_shape)  # pyre-ignore[6]
-
-        # to add the latent noise we exploit the fact that
-        # I \kron D_T + \sigma^2 I_{NT} = I \kron (D_T + \sigma^2 I)
-        # which allows us to move the latent noise inside the task dependent noise
-        # thereby allowing exploitation of Kronecker structure in this likelihood.
-        if add_noise and self.has_global_noise:
-            noise = ConstantDiagLinearOperator(self.noise, diag_shape=task_var_lt.shape[-1])
-            task_var_lt = task_var_lt + noise
-
-        if interleaved:
-            covar_kron_lt = ckl_init(eye_lt, task_var_lt)
-        else:
-            covar_kron_lt = ckl_init(task_var_lt, eye_lt)
-
-        return covar_kron_lt
+        pass
 
     def forward(self, function_samples: Tensor, *params: Any, **kwargs: Any) -> Normal:
-        noise = self._shaped_noise_covar(function_samples.shape, *params, **kwargs).diagonal(dim1=-1, dim2=-2)
-        noise = noise.reshape(*noise.shape[:-1], *function_samples.shape[-2:])
-        return base_distributions.Independent(base_distributions.Normal(function_samples, noise.sqrt()), 1)
+        pass
 
 
 class MultitaskGaussianLikelihood(_MultitaskGaussianLikelihoodBase):
@@ -243,48 +191,35 @@ class MultitaskGaussianLikelihood(_MultitaskGaussianLikelihoodBase):
 
     @property
     def noise(self) -> Tensor | None:
-        return self.raw_noise_constraint.transform(self.raw_noise)
+        pass
 
     @noise.setter
     def noise(self, value: float | Tensor) -> None:
-        self._set_noise(value)
+        pass
 
     @property
     def task_noises(self) -> Tensor | None:
-        if self.rank == 0:
-            return self.raw_task_noises_constraint.transform(self.raw_task_noises)
-        else:
-            raise AttributeError("Cannot set diagonal task noises when covariance has ", self.rank, ">0")
+        pass
 
     @task_noises.setter
     def task_noises(self, value: float | Tensor) -> None:
-        if self.rank == 0:
-            self._set_task_noises(value)
-        else:
-            raise AttributeError("Cannot set diagonal task noises when covariance has ", self.rank, ">0")
+        pass
 
     def _set_noise(self, value: float | Tensor) -> None:
         self.initialize(raw_noise=self.raw_noise_constraint.inverse_transform(value))
 
     def _set_task_noises(self, value: float | Tensor) -> None:
-        self.initialize(raw_task_noises=self.raw_task_noises_constraint.inverse_transform(value))
+        pass
 
     @property
     def task_noise_covar(self) -> Tensor:
-        if self.rank > 0:
-            return self.task_noise_covar_factor.matmul(self.task_noise_covar_factor.transpose(-1, -2))
-        else:
-            raise AttributeError("Cannot retrieve task noises when covariance is diagonal.")
+        pass
 
     @task_noise_covar.setter
     def task_noise_covar(self, value: Tensor) -> None:
         # internally uses a pivoted cholesky decomposition to construct a low rank
         # approximation of the covariance
-        if self.rank > 0:
-            with torch.no_grad():
-                self.task_noise_covar_factor.data = to_linear_operator(value).pivoted_cholesky(rank=self.rank)
-        else:
-            raise AttributeError("Cannot set non-diagonal task noises when covariance is diagonal.")
+        pass
 
     def _eval_covar_matrix(self) -> Tensor:
         covar_factor = self.task_noise_covar_factor
@@ -298,4 +233,4 @@ class MultitaskGaussianLikelihood(_MultitaskGaussianLikelihoodBase):
         r"""
         :return: Analytic marginal :math:`p(\mathbf y)`.
         """
-        return super().marginal(function_dist, *args, **kwargs)
+        pass

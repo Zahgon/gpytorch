@@ -44,18 +44,11 @@ class MultitaskKernel(Kernel):
         self.num_tasks = num_tasks
 
     def forward(self, x1, x2, diag=False, last_dim_is_batch=False, **params):
-        if last_dim_is_batch:
-            raise RuntimeError("MultitaskKernel does not accept the last_dim_is_batch argument.")
-        covar_i = self.task_covar_module.covar_matrix
-        if len(x1.shape[:-2]):
-            covar_i = covar_i.repeat(*x1.shape[:-2], 1, 1)
-        covar_x = to_linear_operator(self.data_covar_module.forward(x1, x2, **params))
-        res = KroneckerProductLinearOperator(covar_x, covar_i)
-        return res.diagonal(dim1=-1, dim2=-2) if diag else res
+        pass
 
     def num_outputs_per_input(self, x1, x2):
         """
         Given `n` data points `x1` and `m` datapoints `x2`, this multitask
         kernel returns an `(n*num_tasks) x (m*num_tasks)` covariance matrix.
         """
-        return self.num_tasks
+        pass

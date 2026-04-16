@@ -20,11 +20,7 @@ class _DeepGPVariationalStrategy:
 
     @property
     def sub_variational_strategies(self):
-        if not hasattr(self, "_sub_variational_strategies_memo"):
-            self._sub_variational_strategies_memo = [
-                module.variational_strategy for module in self.model.modules() if isinstance(module, ApproximateGP)
-            ]
-        return self._sub_variational_strategies_memo
+        pass
 
     def kl_divergence(self):
         return sum(strategy.kl_divergence().sum() for strategy in self.sub_variational_strategies)
@@ -145,10 +141,10 @@ class DeepLikelihood(Likelihood):
         self.base_likelihood = base_likelihood
 
     def expected_log_prob(self, observations, function_dist, *params, **kwargs):
-        return self.base_likelihood.expected_log_prob(observations, function_dist, *params, **kwargs).mean(dim=0)
+        pass
 
     def log_marginal(self, observations, function_dist, *params, **kwargs):
-        return self.base_likelihood.log_marginal(observations, function_dist, *params, **kwargs).mean(dim=0)
+        pass
 
     def forward(self, *args, **kwargs):
         pass

@@ -169,11 +169,7 @@ class BatchDecoupledVariationalStrategy(VariationalStrategy):
 
     def _expand_inputs(self, x: Tensor, inducing_points: Tensor) -> tuple[Tensor, Tensor]:
         # If we haven't explicitly marked a dimension as batch, add the corresponding batch dimension to the input
-        if self.mean_var_batch_dim is None:
-            x = x.unsqueeze(-3)
-        else:
-            x = x.unsqueeze(self.mean_var_batch_dim - 2)
-        return super()._expand_inputs(x, inducing_points)
+        pass
 
     def forward(
         self,
@@ -187,55 +183,7 @@ class BatchDecoupledVariationalStrategy(VariationalStrategy):
         # We'll compute the covariance, and cross-covariance terms for both the
         # pred-mean and pred-covar, using their different inducing points (and maybe kernel hypers)
 
-        mean_var_batch_dim = self.mean_var_batch_dim or -1
-
-        # Compute full prior distribution
-        full_inputs = torch.cat([inducing_points, x], dim=-2)
-        full_output = self.model.forward(full_inputs, **kwargs)
-        full_covar = full_output.lazy_covariance_matrix
-
-        # Covariance terms
-        num_induc = inducing_points.size(-2)
-        test_mean = full_output.mean[..., num_induc:]
-        induc_induc_covar = full_covar[..., :num_induc, :num_induc].add_jitter(self.jitter_val)
-        induc_data_covar = full_covar[..., :num_induc, num_induc:].to_dense()
-        data_data_covar = full_covar[..., num_induc:, num_induc:]
-
-        # Compute interpolation terms
-        # K_ZZ^{-1/2} K_ZX
-        # K_ZZ^{-1/2} \mu_Z
-        L = self._cholesky_factor(induc_induc_covar)
-        if L.shape != induc_induc_covar.shape:
-            # Aggressive caching can cause nasty shape incompatibilies when evaluating with different batch shapes
-            # TODO: Use a hook to make this cleaner
-            try:
-                pop_from_cache_ignore_args(self, "cholesky_factor")
-            except CachingError:
-                pass
-            L = self._cholesky_factor(induc_induc_covar)
-        interp_term = L.solve(induc_data_covar.double()).to(full_inputs.dtype)
-        mean_interp_term = interp_term.select(mean_var_batch_dim - 2, 0)
-        var_interp_term = interp_term.select(mean_var_batch_dim - 2, 1)
-
-        # Compute the mean of q(f)
-        # k_XZ K_ZZ^{-1/2} m + \mu_X
-        # Here we're using the terms that correspond to the mean's inducing points
-        predictive_mean = torch.add(
-            torch.matmul(mean_interp_term.transpose(-1, -2), inducing_values.unsqueeze(-1)).squeeze(-1),
-            test_mean.select(mean_var_batch_dim - 1, 0),
-        )
-
-        # Compute the covariance of q(f)
-        # K_XX + k_XZ K_ZZ^{-1/2} (S - I) K_ZZ^{-1/2} k_ZX
-        middle_term = self.prior_distribution.lazy_covariance_matrix.mul(-1)
-        if variational_inducing_covar is not None:
-            middle_term = SumLinearOperator(variational_inducing_covar, middle_term)
-        predictive_covar = SumLinearOperator(
-            data_data_covar.add_jitter(self.jitter_val).to_dense().select(mean_var_batch_dim - 2, 1),
-            MatmulLinearOperator(var_interp_term.transpose(-1, -2), middle_term @ var_interp_term),
-        )
-
-        return MultivariateNormal(predictive_mean, predictive_covar)
+        pass
 
     def kl_divergence(self) -> Tensor:
         variational_dist = self.variational_distribution

@@ -85,11 +85,11 @@ class CosineKernel(Kernel):
 
     @property
     def period_length(self):
-        return self.raw_period_length_constraint.transform(self.raw_period_length)
+        pass
 
     @period_length.setter
     def period_length(self, value):
-        self._set_period_length(value)
+        pass
 
     def _set_period_length(self, value):
         if not torch.is_tensor(value):
@@ -98,8 +98,4 @@ class CosineKernel(Kernel):
         self.initialize(raw_period_length=self.raw_period_length_constraint.inverse_transform(value))
 
     def forward(self, x1, x2, **params):
-        x1_ = x1.div(self.period_length)
-        x2_ = x2.div(self.period_length)
-        diff = self.covar_dist(x1_, x2_, **params)
-        res = torch.cos(diff.mul(math.pi))
-        return res
+        pass

@@ -111,41 +111,12 @@ class RFFKernel(Kernel):
         self.register_buffer("randn_weights", randn_weights)
 
     def forward(self, x1: Tensor, x2: Tensor, diag: bool = False, last_dim_is_batch: bool = False, **kwargs) -> Tensor:
-        if last_dim_is_batch:
-            x1 = x1.transpose(-1, -2).unsqueeze(-1)
-            x2 = x2.transpose(-1, -2).unsqueeze(-1)
-        num_dims = x1.size(-1)
-        if not hasattr(self, "randn_weights"):
-            self._init_weights(num_dims, self.num_samples)
-        x1_eq_x2 = torch.equal(x1, x2)
-        # Always use normalized features (scaled by 1/sqrt(D)) to ensure consistent
-        # feature matrices regardless of whether x1 == x2 or not. This is important
-        # for LinearPredictionStrategy, which extracts features from the LinearOperator.
-        z1 = self._featurize(x1, normalize=True)
-        if not x1_eq_x2:
-            z2 = self._featurize(x2, normalize=True)
-        else:
-            z2 = z1
-        if diag:
-            return (z1 * z2).sum(-1)
-        if x1_eq_x2:
-            # Exploit low rank structure, if there are fewer features than data points
-            if z1.size(-1) < z2.size(-2):
-                return LowRankRootLinearOperator(z1)
-            else:
-                return RootLinearOperator(z1)
-        else:
-            return MatmulLinearOperator(z1, z2.transpose(-1, -2))
+        pass
 
     def _featurize(self, x: Tensor, normalize: bool = False) -> Tensor:
         # Recompute division each time to allow backprop through lengthscale
         # Transpose lengthscale to allow for ARD
-        x = x.matmul(self.randn_weights / self.lengthscale.transpose(-1, -2))
-        z = torch.cat([torch.cos(x), torch.sin(x)], dim=-1)
-        if normalize:
-            D = self.num_samples
-            z = z / math.sqrt(D)
-        return z
+        pass
 
     def prediction_strategy(self, train_inputs, train_prior_dist, train_labels, likelihood):
         # Allow for fast sampling

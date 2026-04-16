@@ -16,18 +16,7 @@ from .mean import Mean
 def _ensure_updated_strategy_flag_set(
     state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
 ):
-    if prefix + "constant" in state_dict:
-        constant = state_dict.pop(prefix + "constant").squeeze(-1)  # Remove deprecated singleton dimension
-        state_dict[prefix + "raw_constant"] = constant
-        warnings.warn(
-            "You have loaded a GP model with a ConstantMean  from a previous version of "
-            "GPyTorch. The mean module parameter `constant` has been renamed to `raw_constant`. "
-            "Additionally, the shape of `raw_constant` is now *batch_shape, whereas the shape of "
-            "`constant` was *batch_shape x 1. "
-            "We have updated the name/shape of the parameter in your state dict, but we recommend that you "
-            "re-save your model.",
-            OldVersionWarning,
-        )
+    pass
 
 
 class ConstantMean(Mean):
@@ -86,28 +75,19 @@ class ConstantMean(Mean):
 
     @property
     def constant(self):
-        return self._constant_param(self)
+        pass
 
     @constant.setter
     def constant(self, value):
-        self._constant_closure(self, value)
+        pass
 
     # We need a getter of this form so that we can pickle ConstantMean modules with a mean prior, see PR #1992
     def _constant_param(self, m):
-        if hasattr(m, "raw_constant_constraint"):
-            return m.raw_constant_constraint.transform(m.raw_constant)
-        return m.raw_constant
+        pass
 
     # We need a setter of this form so that we can pickle ConstantMean modules with a mean prior, see PR #1992
     def _constant_closure(self, m, value):
-        if not torch.is_tensor(value):
-            value = torch.as_tensor(value).to(m.raw_constant)
-
-        if hasattr(m, "raw_constant_constraint"):
-            m.initialize(raw_constant=m.raw_constant_constraint.inverse_transform(value))
-        else:
-            m.initialize(raw_constant=value)
+        pass
 
     def forward(self, input):
-        constant = self.constant.unsqueeze(-1)  # *batch_shape x 1
-        return constant.expand(torch.broadcast_shapes(constant.shape, input.shape[:-1]))
+        pass

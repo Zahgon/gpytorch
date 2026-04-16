@@ -122,17 +122,14 @@ class NNVariationalStrategy(UnwhitenedVariationalStrategy):
     @property
     @cached(name="prior_distribution_memo")
     def prior_distribution(self) -> MultivariateNormal:  # shape: (..., M)
-        out = self.model.forward(self.inducing_points)
-        res = MultivariateNormal(out.mean, out.lazy_covariance_matrix.add_jitter(self.jitter_val))
-        return res
+        pass
 
     def _cholesky_factor(
         self,
         induc_induc_covar: LinearOperator,  # shape: (..., M, M)
     ) -> TriangularLinearOperator:  # shape: (..., M, M)
         # Uncached version
-        L = psd_safe_cholesky(to_dense(induc_induc_covar))
-        return TriangularLinearOperator(L)
+        pass
 
     def __call__(
         self,
@@ -191,99 +188,7 @@ class NNVariationalStrategy(UnwhitenedVariationalStrategy):
     ) -> MultivariateNormal:  # shape: (..., N)
         # TODO: This method needs to return the full covariance in eval mode, not just the predictive variance.
         # TODO: Use `diag` to control when to compute the variance vs. covariance in train mode.
-        if self.training:
-            # In training mode, note that the full inducing points set = full training dataset
-            # Users have the option to choose input None or a tensor of training data for x
-            # If x is None, will sample training data from inducing points
-            # Otherwise, will find the indices of inducing points that are equal to x
-            if x is None:
-                x_indices = self._get_training_indices()
-                kl_indices = x_indices
-
-                predictive_mean = self._variational_distribution.variational_mean[..., x_indices]
-                predictive_var = self._variational_distribution._variational_stddev[..., x_indices] ** 2
-
-            else:
-                # find the indices of inducing points that correspond to x
-                x_indices = self.nn_util.find_nn_idx(x.float(), k=1).squeeze(-1)  # (*inducing_batch_shape, batch_size)
-
-                expanded_x_indices = x_indices.expand(*self._batch_shape, x_indices.shape[-1])
-                expanded_variational_mean = self._variational_distribution.variational_mean.expand(
-                    *self._batch_shape, self.M
-                )
-                expanded_variational_var = (
-                    self._variational_distribution._variational_stddev.expand(*self._batch_shape, self.M) ** 2
-                )
-
-                predictive_mean = expanded_variational_mean.gather(-1, expanded_x_indices)
-                predictive_var = expanded_variational_var.gather(-1, expanded_x_indices)
-
-                # sample a different indices for stochastic estimation of kl
-                kl_indices = self._get_training_indices()
-
-            kl = self._kl_divergence(kl_indices)
-            add_to_cache(self, "kl_divergence_memo", kl)
-
-            return MultivariateNormal(predictive_mean, DiagLinearOperator(predictive_var))
-        else:
-            nn_indices = self.nn_util.find_nn_idx(x.float())
-
-            x_batch_shape = x.shape[:-2]
-            batch_shape = torch.broadcast_shapes(self._batch_shape, x_batch_shape)
-            x_bsz = x.shape[-2]
-            assert nn_indices.shape == (*x_batch_shape, x_bsz, self.k), nn_indices.shape
-
-            # select K nearest neighbors from inducing points for test point x
-            expanded_nn_indices = nn_indices.unsqueeze(-1).expand(*x_batch_shape, x_bsz, self.k, self.D)
-            expanded_inducing_points = inducing_points.unsqueeze(-2).expand(*x_batch_shape, self.M, self.k, self.D)
-            inducing_points = expanded_inducing_points.gather(-3, expanded_nn_indices)
-            assert inducing_points.shape == (*x_batch_shape, x_bsz, self.k, self.D)
-
-            # get variational mean and covar for nearest neighbors
-            inducing_values = self._variational_distribution.variational_mean
-            expanded_inducing_values = inducing_values.unsqueeze(-1).expand(*batch_shape, self.M, self.k)
-            expanded_nn_indices = nn_indices.expand(*batch_shape, x_bsz, self.k)
-            inducing_values = expanded_inducing_values.gather(-2, expanded_nn_indices)
-            assert inducing_values.shape == (*batch_shape, x_bsz, self.k)
-
-            variational_stddev = self._variational_distribution._variational_stddev
-            assert variational_stddev.shape == (*self._model_batch_shape, self.M)
-            expanded_variational_stddev = variational_stddev.unsqueeze(-1).expand(*batch_shape, self.M, self.k)
-            variational_inducing_covar = expanded_variational_stddev.gather(-2, expanded_nn_indices) ** 2
-            assert variational_inducing_covar.shape == (*batch_shape, x_bsz, self.k)
-            variational_inducing_covar = DiagLinearOperator(variational_inducing_covar)
-            assert variational_inducing_covar.shape == (*batch_shape, x_bsz, self.k, self.k)
-
-            # Make everything batch mode
-            x = x.unsqueeze(-2)
-            assert x.shape == (*x_batch_shape, x_bsz, 1, self.D)
-            x = x.expand(*batch_shape, x_bsz, 1, self.D)
-
-            # Compute forward mode in the standard way
-            _batch_dims = tuple(range(len(batch_shape)))
-            _x = x.permute((-3,) + _batch_dims + (-2, -1))  # (x_bsz, *batch_shape, 1, D)
-
-            # inducing_points.shape (*x_batch_shape, x_bsz, self.k, self.D)
-            inducing_points = inducing_points.expand(*batch_shape, x_bsz, self.k, self.D)
-            _inducing_points = inducing_points.permute((-3,) + _batch_dims + (-2, -1))  # (x_bsz, *batch_shape, k, D)
-            _inducing_values = inducing_values.permute((-2,) + _batch_dims + (-1,))
-            _variational_inducing_covar = variational_inducing_covar.permute((-3,) + _batch_dims + (-2, -1))
-            dist = super().forward(_x, _inducing_points, _inducing_values, _variational_inducing_covar, **kwargs)
-
-            _x_batch_dims = tuple(range(1, 1 + len(batch_shape)))
-            predictive_mean = dist.mean  # (x_bsz, *x_batch_shape, 1)
-            predictive_covar = dist.covariance_matrix  # (x_bsz, *x_batch_shape, 1, 1)
-            predictive_mean = predictive_mean.permute(_x_batch_dims + (0, -1))
-            predictive_covar = predictive_covar.permute(_x_batch_dims + (0, -2, -1))
-
-            # Undo batch mode
-            predictive_mean = predictive_mean.squeeze(-1)
-            predictive_var = predictive_covar.squeeze(-2).squeeze(-1)
-            assert predictive_var.shape == predictive_covar.shape[:-2]
-            assert predictive_mean.shape == predictive_covar.shape[:-2]
-
-            # Return the distribution
-            return MultivariateNormal(predictive_mean, DiagLinearOperator(predictive_var))
+        pass
 
     def get_fantasy_model(
         self,
@@ -312,29 +217,11 @@ class NNVariationalStrategy(UnwhitenedVariationalStrategy):
         self._total_training_batches = len(self._training_indices_iterator)
 
     def _get_training_indices(self) -> LongTensor:
-        self.current_training_indices = self._training_indices_iterator[self._training_indices_iter]
-        self._training_indices_iter += 1
-        if self._training_indices_iter == self._total_training_batches:
-            self._set_training_iterator()
-        return self.current_training_indices
+        pass
 
     def _firstk_kl_helper(self) -> Tensor:  # shape: (...)
         # Compute the KL divergence for first k inducing points
-        train_x_firstk = self.inducing_points[..., : self.k, :]
-        full_output = self.model.forward(train_x_firstk)
-
-        induc_mean, induc_induc_covar = full_output.mean, full_output.lazy_covariance_matrix
-
-        induc_induc_covar = induc_induc_covar.add_jitter(self.jitter_val)
-        prior_dist = MultivariateNormal(induc_mean, induc_induc_covar)
-
-        inducing_values = self._variational_distribution.variational_mean[..., : self.k]
-        variational_covar_fisrtk = self._variational_distribution._variational_stddev[..., : self.k] ** 2
-        variational_inducing_covar = DiagLinearOperator(variational_covar_fisrtk)
-
-        variational_distribution = MultivariateNormal(inducing_values, variational_inducing_covar)
-        kl = torch.distributions.kl.kl_divergence(variational_distribution, prior_dist)  # model_batch_shape
-        return kl
+        pass
 
     def _stochastic_kl_helper(
         self,
@@ -342,127 +229,12 @@ class NNVariationalStrategy(UnwhitenedVariationalStrategy):
     ) -> Tensor:  # shape: (...)
         # Compute the KL divergence for a mini batch of the rest M-k inducing points
         # See paper appendix for kl breakdown
-        kl_bs = len(kl_indices)  # training_batch_size
-        variational_mean = self._variational_distribution.variational_mean  # (*model_bs, M)
-        variational_stddev = self._variational_distribution._variational_stddev
-
-        # (1) compute logdet_q
-        inducing_point_log_variational_covar = (variational_stddev[..., kl_indices] ** 2).log()
-        logdet_q = torch.sum(inducing_point_log_variational_covar, dim=-1)  # model_bs
-
-        # (2) compute lodet_p
-        # Select a mini-batch of inducing points according to kl_indices
-        inducing_points = self.inducing_points[..., kl_indices, :].expand(*self._batch_shape, kl_bs, self.D)
-        # (*bs, kl_bs, D)
-        # Select their K nearest neighbors
-        nearest_neighbor_indices = self.nn_xinduce_idx[..., kl_indices - self.k, :].to(inducing_points.device)
-        # (*bs, kl_bs, K)
-        expanded_inducing_points_all = self.inducing_points.unsqueeze(-2).expand(
-            *self._batch_shape, self.M, self.k, self.D
-        )
-        expanded_nearest_neighbor_indices = nearest_neighbor_indices.unsqueeze(-1).expand(
-            *self._batch_shape, kl_bs, self.k, self.D
-        )
-        nearest_neighbors = expanded_inducing_points_all.gather(-3, expanded_nearest_neighbor_indices)
-        # (*bs, kl_bs, K, D)
-
-        # Compute prior distribution
-        # Move the kl_bs dimension to the first dimension to enable batch covar_module computation
-        nearest_neighbors_ = nearest_neighbors.permute((-3,) + tuple(range(len(self._batch_shape))) + (-2, -1))
-        # (kl_bs, *bs, K, D)
-        inducing_points_ = inducing_points.permute((-2,) + tuple(range(len(self._batch_shape))) + (-1,))
-        # (kl_bs, *bs, D)
-        full_output = self.model.forward(torch.cat([nearest_neighbors_, inducing_points_.unsqueeze(-2)], dim=-2))
-        full_mean, full_covar = full_output.mean, full_output.covariance_matrix
-
-        # Mean terms
-        _undo_permute_dims = tuple(range(1, 1 + len(self._batch_shape))) + (0, -1)
-        nearest_neighbors_prior_mean = full_mean[..., : self.k].permute(_undo_permute_dims)  # (*inducing_bs, kl_bs, K)
-        inducing_prior_mean = full_mean[..., self.k :].permute(_undo_permute_dims).squeeze(-1)  # (*inducing_bs, kl_bs)
-        # Covar terms
-        nearest_neighbors_prior_cov = full_covar[..., : self.k, : self.k]
-        nearest_neighbors_inducing_prior_cross_cov = full_covar[..., : self.k, self.k :]
-        inducing_prior_cov = full_covar[..., self.k :, self.k :]
-        inducing_prior_cov = (
-            inducing_prior_cov.squeeze(-1).squeeze(-1).permute((-1,) + tuple(range(len(self._batch_shape))))
-        )
-
-        # Interpolation term K_nn^{-1} k_{nu}
-        interp_term = torch.linalg.solve(
-            nearest_neighbors_prior_cov + self.jitter_val * torch.eye(self.k, device=self.inducing_points.device),
-            nearest_neighbors_inducing_prior_cross_cov,
-        ).squeeze(
-            -1
-        )  # (kl_bs, *inducing_bs, K)
-        interp_term = interp_term.permute(_undo_permute_dims)  # (*inducing_bs, kl_bs, K)
-        nearest_neighbors_inducing_prior_cross_cov = nearest_neighbors_inducing_prior_cross_cov.squeeze(-1).permute(
-            _undo_permute_dims
-        )  # k_{n(j),j}, (*inducing_bs, kl_bs, K)
-
-        invquad_term_for_F = torch.sum(
-            interp_term * nearest_neighbors_inducing_prior_cross_cov, dim=-1
-        )  # (*inducing_bs, kl_bs)
-
-        inducing_prior_cov = self.model.covar_module.forward(
-            inducing_points, inducing_points, diag=True
-        )  # (*inducing_bs, kl_bs)
-
-        F = inducing_prior_cov - invquad_term_for_F
-        F = F + self.jitter_val
-        # K_uu - k_un K_nn^{-1} k_nu
-        logdet_p = F.log().sum(dim=-1)  # shape: inducing_bs
-
-        # (3) compute trace_term
-        expanded_variational_stddev = variational_stddev.unsqueeze(-1).expand(*self._batch_shape, self.M, self.k)
-        expanded_variational_mean = variational_mean.unsqueeze(-1).expand(*self._batch_shape, self.M, self.k)
-        expanded_nearest_neighbor_indices = nearest_neighbor_indices.expand(*self._batch_shape, kl_bs, self.k)
-        nearest_neighbor_variational_covar = (
-            expanded_variational_stddev.gather(-2, expanded_nearest_neighbor_indices) ** 2
-        )  # (*batch_shape, kl_bs, k)
-        bjsquared_s_nearest_neighbors = torch.sum(
-            interp_term**2 * nearest_neighbor_variational_covar, dim=-1
-        )  # (*batch_shape, kl_bs)
-        inducing_point_variational_covar = variational_stddev[..., kl_indices] ** 2  # (model_bs, kl_bs)
-        trace_term = (1.0 / F * (bjsquared_s_nearest_neighbors + inducing_point_variational_covar)).sum(
-            dim=-1
-        )  # batch_shape
-
-        # (4) compute invquad_term
-        nearest_neighbors_variational_mean = expanded_variational_mean.gather(-2, expanded_nearest_neighbor_indices)
-        Bj_m_nearest_neighbors = torch.sum(
-            interp_term * (nearest_neighbors_variational_mean - nearest_neighbors_prior_mean), dim=-1
-        )
-        inducing_variational_mean = variational_mean[..., kl_indices]
-        invquad_term = torch.sum(
-            (inducing_variational_mean - inducing_prior_mean - Bj_m_nearest_neighbors) ** 2 / F, dim=-1
-        )
-
-        kl = (logdet_p - logdet_q - kl_bs + trace_term + invquad_term) * (1.0 / 2)
-        assert kl.shape == self._batch_shape, kl.shape
-
-        return kl
+        pass
 
     def _kl_divergence(
         self, kl_indices: LongTensor | None = None, batch_size: int | None = None
     ) -> Tensor:  # shape: (...)
-        if self.compute_full_kl or (self._total_training_batches == 1):
-            if batch_size is None:
-                batch_size = self.training_batch_size
-            kl = self._firstk_kl_helper()
-            for kl_indices in torch.split(torch.arange(self.k, self.M), batch_size):
-                kl += self._stochastic_kl_helper(kl_indices)
-        else:
-            # compute a stochastic estimate
-            assert kl_indices is not None
-            if self._training_indices_iter == 1:
-                assert len(kl_indices) == self.k, (
-                    f"kl_indices sould be the first batch data of length k, "
-                    f"but got len(kl_indices) = {len(kl_indices)} and k = {self.k}."
-                )
-                kl = self._firstk_kl_helper() * self.M / self.k
-            else:
-                kl = self._stochastic_kl_helper(kl_indices) * self.M / len(kl_indices)
-        return kl
+        pass
 
     def kl_divergence(self) -> Tensor:  # shape: (...)
         try:

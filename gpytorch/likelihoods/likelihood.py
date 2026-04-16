@@ -29,45 +29,27 @@ class _Likelihood(Module, ABC):
     def _draw_likelihood_samples(
         self, function_dist: MultivariateNormal, *args: Any, sample_shape: torch.Size | None = None, **kwargs: Any
     ) -> _Distribution:
-        if sample_shape is None:
-            sample_shape = torch.Size(
-                [settings.num_likelihood_samples.value()]
-                + [1] * (self.max_plate_nesting - len(function_dist.batch_shape) - 1)
-            )
-        else:
-            sample_shape = sample_shape[: -len(function_dist.batch_shape) - 1]
-        if self.training:
-            num_event_dims = len(function_dist.event_shape)
-            function_dist = base_distributions.Normal(function_dist.mean, function_dist.variance.sqrt())
-            function_dist = base_distributions.Independent(function_dist, num_event_dims - 1)
-        function_samples = function_dist.rsample(sample_shape)
-        return self.forward(function_samples, *args, **kwargs)
+        pass
 
     def expected_log_prob(
         self, observations: Tensor, function_dist: MultivariateNormal, *args: Any, **kwargs: Any
     ) -> Tensor:
-        likelihood_samples = self._draw_likelihood_samples(function_dist, *args, **kwargs)
-        res = likelihood_samples.log_prob(observations, *args, **kwargs).mean(dim=0)
-        return res
+        pass
 
     @abstractmethod
     def forward(self, function_samples: Tensor, *args: Any, **kwargs: Any) -> _Distribution:
         raise NotImplementedError
 
     def get_fantasy_likelihood(self, **kwargs: Any) -> _Likelihood:
-        return deepcopy(self)
+        pass
 
     def log_marginal(
         self, observations: Tensor, function_dist: MultivariateNormal, *args: Any, **kwargs: Any
     ) -> Tensor:
-        likelihood_samples = self._draw_likelihood_samples(function_dist, *args, **kwargs)
-        log_probs = likelihood_samples.log_prob(observations)
-        res = log_probs.sub(math.log(log_probs.size(0))).logsumexp(dim=0)
-        return res
+        pass
 
     def marginal(self, function_dist: MultivariateNormal, *args: Any, **kwargs: Any) -> _Distribution:
-        res = self._draw_likelihood_samples(function_dist, *args, **kwargs)
-        return res
+        pass
 
     def __call__(self, input: Tensor | MultivariateNormal, *args: Any, **kwargs: Any) -> _Distribution:
         # Conditional
@@ -123,52 +105,24 @@ try:
 
         @property
         def num_data(self) -> int:
-            if hasattr(self, "_num_data"):
-                return self._num_data
-            else:
-                warnings.warn(
-                    "likelihood.num_data isn't set. This might result in incorrect ELBO scaling.", GPInputWarning
-                )
-                return ""
+            pass
 
         @num_data.setter
         def num_data(self, val: int) -> None:
-            self._num_data = val
+            pass
 
         @property
         def name_prefix(self) -> str:
-            if hasattr(self, "_name_prefix"):
-                return self._name_prefix
-            else:
-                return ""
+            pass
 
         @name_prefix.setter
         def name_prefix(self, val: str) -> None:
-            self._name_prefix = val
+            pass
 
         def _draw_likelihood_samples(
             self, function_dist: _Distribution, *args: Any, sample_shape: torch.Size | None = None, **kwargs: Any
         ) -> _Distribution:
-            if self.training:
-                num_event_dims = len(function_dist.event_shape)
-                function_dist = base_distributions.Normal(function_dist.mean, function_dist.variance.sqrt())
-                function_dist = base_distributions.Independent(function_dist, num_event_dims - 1)
-
-            plate_name = self.name_prefix + ".num_particles_vectorized"
-            num_samples = settings.num_likelihood_samples.value()
-            max_plate_nesting = max(self.max_plate_nesting, len(function_dist.batch_shape))
-            with pyro.plate(plate_name, size=num_samples, dim=(-max_plate_nesting - 1)):
-                if sample_shape is None:
-                    function_samples = pyro.sample(self.name_prefix, function_dist.mask(False))
-                    # Deal with the fact that we're not assuming conditional independence over data points here
-                    function_samples = function_samples.squeeze(-len(function_dist.event_shape) - 1)
-                else:
-                    sample_shape = sample_shape[: -len(function_dist.batch_shape)]
-                    function_samples = function_dist(sample_shape)
-
-                if not self.training:
-                    function_samples = function_samples.squeeze(-len(function_dist.event_shape) - 1)
-                return self.forward(function_samples, *args, **kwargs)
+            pass
 
         def expected_log_prob(
             self, observations: Tensor, function_dist: MultivariateNormal, *args: Any, **kwargs: Any
@@ -187,7 +141,7 @@ try:
             :param args: Additional args (passed to the forward function).
             :param kwargs: Additional kwargs (passed to the forward function).
             """
-            return super().expected_log_prob(observations, function_dist, *args, **kwargs)
+            pass
 
         @abstractmethod
         def forward(
@@ -208,7 +162,7 @@ try:
 
         def get_fantasy_likelihood(self, **kwargs: Any) -> _Likelihood:
             """"""
-            return super().get_fantasy_likelihood(**kwargs)
+            pass
 
         def log_marginal(
             self, observations: Tensor, function_dist: MultivariateNormal, *args: Any, **kwargs: Any
@@ -230,7 +184,7 @@ try:
             :param args: Additional args (passed to the forward function).
             :param kwargs: Additional kwargs (passed to the forward function).
             """
-            return super().log_marginal(observations, function_dist, *args, **kwargs)
+            pass
 
         def marginal(self, function_dist: MultivariateNormal, *args: Any, **kwargs: Any) -> _Distribution:
             r"""
@@ -249,7 +203,7 @@ try:
             :param kwargs: Additional kwargs (passed to the forward function).
             :return: The marginal distribution, or samples from it.
             """
-            return super().marginal(function_dist, *args, **kwargs)
+            pass
 
         def pyro_guide(self, function_dist: MultivariateNormal, target: Tensor, *args: Any, **kwargs: Any) -> None:
             r"""
@@ -264,8 +218,7 @@ try:
             :param args: Additional args (passed to the forward function).
             :param kwargs: Additional kwargs (passed to the forward function).
             """
-            with pyro.plate(self.name_prefix + ".data_plate", dim=-1):
-                pyro.sample(self.name_prefix + ".f", function_dist)
+            pass
 
         def pyro_model(self, function_dist: MultivariateNormal, target: Tensor, *args: Any, **kwargs: Any) -> Tensor:
             r"""
@@ -281,15 +234,10 @@ try:
             :param args: Additional args (passed to the forward function).
             :param kwargs: Additional kwargs (passed to the forward function).
             """
-            with pyro.plate(self.name_prefix + ".data_plate", dim=-1):
-                function_samples = pyro.sample(self.name_prefix + ".f", function_dist)
-                output_dist = self(function_samples, *args, **kwargs)
-                return self.sample_target(output_dist, target)
+            pass
 
         def sample_target(self, output_dist: MultivariateNormal, target: Tensor) -> Tensor:
-            scale = (self.num_data or output_dist.batch_shape[-1]) / output_dist.batch_shape[-1]
-            with pyro.poutine.scale(scale=scale):  # pyre-ignore[16]
-                return pyro.sample(self.name_prefix + ".y", output_dist, obs=target)
+            pass
 
         def __call__(self, input: Tensor | MultivariateNormal, *args: Any, **kwargs: Any) -> _Distribution:
             r"""
@@ -379,21 +327,19 @@ except ImportError:
     class Likelihood(_Likelihood):
         @property
         def num_data(self) -> int:
-            warnings.warn("num_data is only used for likelihoods that are integrated with Pyro.", RuntimeWarning)
-            return 0
+            pass
 
         @num_data.setter
         def num_data(self, val: int) -> None:
-            warnings.warn("num_data is only used for likelihoods that are integrated with Pyro.", RuntimeWarning)
+            pass
 
         @property
         def name_prefix(self) -> str:
-            warnings.warn("name_prefix is only used for likelihoods that are integrated with Pyro.", RuntimeWarning)
-            return ""
+            pass
 
         @name_prefix.setter
         def name_prefix(self, val: str) -> None:
-            warnings.warn("name_prefix is only used for likelihoods that are integrated with Pyro.", RuntimeWarning)
+            pass
 
 
 class _OneDimensionalLikelihood(Likelihood, ABC):
@@ -412,15 +358,9 @@ class _OneDimensionalLikelihood(Likelihood, ABC):
     def expected_log_prob(
         self, observations: Tensor, function_dist: MultivariateNormal, *args: Any, **kwargs: Any
     ) -> Tensor:
-        log_prob_lambda = lambda function_samples: self.forward(function_samples, *args, **kwargs).log_prob(
-            observations
-        )
-        log_prob = self.quadrature(log_prob_lambda, function_dist)
-        return log_prob
+        pass
 
     def log_marginal(
         self, observations: Tensor, function_dist: MultivariateNormal, *args: Any, **kwargs: Any
     ) -> Tensor:
-        prob_lambda = lambda function_samples: self.forward(function_samples).log_prob(observations).exp()
-        prob = self.quadrature(prob_lambda, function_dist)
-        return prob.log()
+        pass

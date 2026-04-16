@@ -85,19 +85,19 @@ class HammingIMQKernel(Kernel):
 
     @property
     def alpha(self) -> Tensor:
-        return self.raw_alpha_constraint.transform(self.raw_alpha)
+        pass
 
     @alpha.setter
     def alpha(self, value: Tensor):
-        self._set_alpha(value)
+        pass
 
     def _alpha_param(self, m: Kernel) -> Tensor:
         # Used by the alpha_prior
-        return m.alpha
+        pass
 
     def _alpha_closure(self, m: Kernel, v: Tensor | float) -> None:
         # Used by the alpha_prior
-        m._set_alpha(v)
+        pass
 
     def _set_alpha(self, value: Tensor | float) -> None:
         # Used by the alpha_prior
@@ -107,19 +107,19 @@ class HammingIMQKernel(Kernel):
 
     @property
     def beta(self) -> Tensor:
-        return self.raw_beta_constraint.transform(self.raw_beta)
+        pass
 
     @beta.setter
     def beta(self, value: Tensor):
-        self._set_beta(value)
+        pass
 
     def _beta_param(self, m: Kernel) -> Tensor:
         # Used by the beta_prior
-        return m.beta
+        pass
 
     def _beta_closure(self, m: Kernel, v: Tensor | float) -> None:
         # Used by the beta_prior
-        m._set_beta(v)
+        pass
 
     def _set_beta(self, value: Tensor | float) -> None:
         # Used by the beta_prior
@@ -128,33 +128,12 @@ class HammingIMQKernel(Kernel):
         self.initialize(raw_beta=self.raw_beta_constraint.inverse_transform(value))
 
     def _imq(self, dist: Tensor) -> Tensor:
-        return ((1 + self.alpha) / (self.alpha + dist)).pow(self.beta)
+        pass
 
     def forward(self, x1: Tensor, x2: Tensor, diag: bool = False, **params):
         # GPyTorch is pretty particular about dimensions so we need to unflatten the one-hot encoding
-        x1 = x1.view(*x1.shape[:-1], -1, self.vocab_size)
-        x2 = x2.view(*x2.shape[:-1], -1, self.vocab_size)
-
-        x1_eq_x2 = torch.equal(x1, x2)
-
-        if diag:
-            if x1_eq_x2:
-                res = ((1 + self.alpha) / self.alpha).pow(self.beta)
-                skip_dims = [-1] * len(self.batch_shape)
-                return res.expand(*skip_dims, x1.size(-3))
-            else:
-                dist = x1.size(-2) - (x1 * x2).sum(dim=(-1, -2))
-                return self._imq(dist)
-
-        else:
-            dist = hamming_dist(x1, x2, x1_eq_x2)
-
-        return self._imq(dist)
+        pass
 
 
 def hamming_dist(x1: Tensor, x2: Tensor, x1_eq_x2: bool) -> Tensor:
-    res = x1.size(-2) - (x1.unsqueeze(-3) * x2.unsqueeze(-4)).sum(dim=(-1, -2))
-    if x1_eq_x2 and not x1.requires_grad and not x2.requires_grad:
-        res.diagonal(dim1=-2, dim2=-1).fill_(0)
-    # Zero out negative values
-    return res.clamp_min_(0)
+    pass

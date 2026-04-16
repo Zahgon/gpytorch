@@ -58,8 +58,7 @@ except ImportError:
             return new
 
         def rsample(self, sample_shape=torch.Size()):
-            shape = sample_shape + self.v.shape
-            return self.v.expand(shape)
+            pass
 
         def log_prob(self, x):
             v = self.v.expand(self.batch_shape + self.event_shape)
@@ -74,9 +73,9 @@ except ImportError:
 
         @property
         def variance(self):
-            return torch.zeros_like(self.v)
+            pass
 
 
 @register_kl(Delta, MultivariateNormal)
 def kl_mvn_mvn(p_dist, q_dist):
-    return -q_dist.log_prob(p_dist.mean)
+    pass

@@ -54,17 +54,14 @@ class LCMKernel(Kernel):
         )
 
     def forward(self, x1, x2, **params):
-        res = self.covar_module_list[0].forward(x1, x2, **params)
-        for m in self.covar_module_list[1:]:
-            res += m.forward(x1, x2, **params)
-        return res
+        pass
 
     def num_outputs_per_input(self, x1, x2):
         """
         Given `n` data points `x1` and `m` datapoints `x2`, this multitask kernel
         returns an `(n*num_tasks) x (m*num_tasks)` covariance matrix.
         """
-        return self.covar_module_list[0].num_outputs_per_input(x1, x2)
+        pass
 
     def __getitem__(self, index):
         new_kernel = deepcopy(self)

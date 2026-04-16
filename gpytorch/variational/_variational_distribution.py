@@ -30,7 +30,7 @@ class _VariationalDistribution(Module, ABC):
 
     @property
     def dtype(self) -> torch.dtype:
-        return next(self.parameters()).dtype
+        pass
 
     def forward(self) -> Distribution:
         r"""
@@ -46,7 +46,7 @@ class _VariationalDistribution(Module, ABC):
         Event + batch shape of VariationalDistribution object
         :rtype: torch.Size
         """
-        return torch.Size([*self.batch_shape, self.num_inducing_points])
+        pass
 
     @abstractmethod
     def initialize_variational_distribution(self, prior_dist: MultivariateNormal) -> None:

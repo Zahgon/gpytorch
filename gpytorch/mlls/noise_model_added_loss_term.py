@@ -12,6 +12,4 @@ class NoiseModelAddedLossTerm(AddedLossTerm):
         self.noise_mll = ExactMarginalLogLikelihood(noise_model.likelihood, noise_model)
 
     def loss(self, *params):
-        output = self.noise_mll.model(*params)
-        targets = self.noise_mll.model.train_targets
-        return self.noise_mll(output, targets)
+        pass

@@ -40,7 +40,7 @@ class PointLatentVariable(LatentVariable):
         self.register_parameter("X", X_init)
 
     def forward(self):
-        return self.X
+        pass
 
 
 class MAPLatentVariable(LatentVariable):
@@ -61,7 +61,7 @@ class MAPLatentVariable(LatentVariable):
         self.register_prior("prior_x", prior_x, "X")
 
     def forward(self):
-        return self.X
+        pass
 
 
 class VariationalLatentVariable(LatentVariable):
@@ -92,10 +92,4 @@ class VariationalLatentVariable(LatentVariable):
         self.register_added_loss_term("x_kl")
 
     def forward(self):
-        from ...mlls import KLGaussianAddedLossTerm
-
-        # Variational distribution over the latent variable q(x)
-        q_x = torch.distributions.Normal(self.q_mu, torch.nn.functional.softplus(self.q_log_sigma))
-        x_kl = KLGaussianAddedLossTerm(q_x, self.prior_x, self.n, self.data_dim)
-        self.update_added_loss_term("x_kl", x_kl)  # Update the KL term
-        return q_x.rsample()
+        pass

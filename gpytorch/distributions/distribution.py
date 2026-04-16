@@ -13,7 +13,7 @@ class _DistributionBase(TDistribution):
 
     @property
     def islazy(self):
-        return self._islazy
+        pass
 
     def __add__(self, other):
         raise NotImplementedError()

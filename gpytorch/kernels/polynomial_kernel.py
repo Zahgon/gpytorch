@@ -65,11 +65,11 @@ class PolynomialKernel(Kernel):
 
     @property
     def offset(self) -> torch.Tensor:
-        return self.raw_offset_constraint.transform(self.raw_offset)
+        pass
 
     @offset.setter
     def offset(self, value: torch.Tensor) -> None:
-        self._set_offset(value)
+        pass
 
     def _set_offset(self, value: torch.Tensor) -> None:
         if not torch.is_tensor(value):
@@ -84,16 +84,4 @@ class PolynomialKernel(Kernel):
         last_dim_is_batch: bool | None = False,
         **params,
     ) -> torch.Tensor:
-        offset = self.offset.view(*self.batch_shape, 1, 1)
-
-        if last_dim_is_batch:
-            x1 = x1.transpose(-1, -2).unsqueeze(-1)
-            x2 = x2.transpose(-1, -2).unsqueeze(-1)
-
-        if diag:
-            return ((x1 * x2).sum(dim=-1) + self.offset).pow(self.power)
-
-        if (x1.dim() == 2 and x2.dim() == 2) and offset.dim() == 2:
-            return torch.addmm(offset, x1, x2.transpose(-2, -1)).pow(self.power)
-        else:
-            return (torch.matmul(x1, x2.transpose(-2, -1)) + offset).pow(self.power)
+        pass

@@ -41,5 +41,4 @@ class PoissonLikelihood(_OneDimensionalLikelihood):
         super().__init__()
 
     def forward(self, function_samples: Tensor, *args: Any, **kwargs: Any) -> Poisson:
-        rates = torch.nn.functional.softplus(function_samples)
-        return base_distributions.Poisson(rates)
+        pass

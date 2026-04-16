@@ -48,7 +48,7 @@ class ProductStructureKernel(Kernel):
         """
         Kernel is stationary if the base kernel is stationary.
         """
-        return self.base_kernel.is_stationary
+        pass
 
     def __init__(
         self,
@@ -68,15 +68,10 @@ class ProductStructureKernel(Kernel):
         self.num_dims = num_dims
 
     def forward(self, x1, x2, diag=False, last_dim_is_batch=False, **params):
-        if last_dim_is_batch:
-            raise RuntimeError("ProductStructureKernel does not accept the last_dim_is_batch argument.")
-
-        res = self.base_kernel(x1, x2, diag=diag, last_dim_is_batch=True, **params)
-        res = res.prod(-2 if diag else -3)
-        return res
+        pass
 
     def num_outputs_per_input(self, x1, x2):
-        return self.base_kernel.num_outputs_per_input(x1, x2)
+        pass
 
     def __call__(self, x1_, x2_=None, diag=False, last_dim_is_batch=False, **params):
         """

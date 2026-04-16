@@ -62,63 +62,22 @@ class TrilNaturalVariationalDistribution(_NaturalVariationalDistribution):
         self.register_parameter(name="natural_tril_mat", parameter=torch.nn.Parameter(neg_prec_init))
 
     def forward(self) -> Distribution:
-        mean, chol_covar = _TrilNaturalToMuVarSqrt.apply(self.natural_vec, self.natural_tril_mat)
-        return MultivariateNormal(mean, CholLinearOperator(TriangularLinearOperator(chol_covar)))
+        pass
 
     def initialize_variational_distribution(self, prior_dist: MultivariateNormal) -> None:
-        prior_cov = prior_dist.lazy_covariance_matrix
-        chol = prior_cov.cholesky().to_dense()
-        tril_mat = _triangular_inverse(chol, upper=False)
-
-        natural_vec = prior_cov.solve(prior_dist.mean.unsqueeze(-1)).squeeze(-1)
-        noise = torch.randn_like(natural_vec).mul_(self.mean_init_std)
-
-        self.natural_vec.data.copy_(natural_vec.add_(noise))
-        self.natural_tril_mat.data.copy_(tril_mat)
+        pass
 
 
 class _TrilNaturalToMuVarSqrt(torch.autograd.Function):
     @staticmethod
     def _forward(nat_mean: Tensor, tril_nat_covar: Tensor) -> tuple[Tensor, Tensor]:
-        L = _triangular_inverse(tril_nat_covar, upper=False)
-        mu = L @ (L.transpose(-1, -2) @ nat_mean.unsqueeze(-1))
-        return mu.squeeze(-1), L
+        pass
         # return nat_mean, L
 
     @staticmethod
     def forward(ctx: FunctionCtx, nat_mean: Tensor, tril_nat_covar: Tensor) -> tuple[Tensor, Tensor]:
-        mu, L = _TrilNaturalToMuVarSqrt._forward(nat_mean, tril_nat_covar)
-        ctx.save_for_backward(mu, L, tril_nat_covar)
-        return mu, L
+        pass
 
     @staticmethod
     def backward(ctx: FunctionCtx, dout_dmu: Tensor, dout_dL: Tensor) -> tuple[Tensor, Tensor]:
-        mu, L, C = ctx.saved_tensors
-        dout_dnat1, dout_dnat2 = _NaturalToMuVarSqrt._backward(dout_dmu, dout_dL, mu, L, C)
-        """
-        Now we need to do the Jacobian-Vector Product for the transformation:
-        L = inv(chol(inv(-2 theta_cov)))
-
-        C^T C = -2 theta_cov
-
-        so we need to do forward differentiation, starting with sensitivity (sensitivities marked with .dots.)
-        .theta_cov. = dout_dnat2
-
-        and ending with sensitivity .C.
-
-        if B = inv(-2 theta_cov) then:
-
-        .B.  =  d inv(-2 theta_cov)/dtheta_cov * .theta_cov.  =  -B (-2 .theta_cov.) B
-
-        if L = chol(B), B = LL^T then (https://homepages.inf.ed.ac.uk/imurray2/pub/16choldiff/choldiff.pdf):
-
-        .L. = L phi(L^{-1} .B. (L^{-1})^T) = L phi(2 L^T .theta_cov. L)
-
-        Then C = inv(L), so
-
-        .C. = -C .L. C = phi(-2 L^T .theta_cov. L)C
-        """
-        A = L.transpose(-2, -1) @ dout_dnat2 @ L
-        phi = _phi_for_cholesky_(A.mul_(-2))
-        dout_dtril = phi @ C
-        return dout_dnat1, dout_dtril
+        pass

@@ -62,21 +62,4 @@ class GibbsKernel(Kernel):
         return new_kernel
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor, diag: bool = False, **params):
-        x1_eq_x2 = torch.equal(x1, x2)
-
-        l1 = self.lengthscale_fn(x1)
-        if l1.shape[-1] != 1:
-            raise ValueError(f"lengthscale_fn must return shape (..., k, 1), got (..., k, {l1.shape[-1]})")
-        l2 = l1 if x1_eq_x2 else self.lengthscale_fn(x2)
-
-        dist_sq = self.covar_dist(x1, x2, square_dist=True, diag=diag, **params)
-
-        if diag:
-            S = (l1.pow(2) + l2.pow(2)).squeeze(-1)
-            prod = (l1 * l2).squeeze(-1)
-        else:
-            S = l1.pow(2) + l2.pow(2).transpose(-2, -1)
-            prod = l1 * l2.transpose(-2, -1)
-
-        prefactor = (2.0 * prod / S).sqrt()
-        return prefactor * (-dist_sq / S).exp()
+        pass

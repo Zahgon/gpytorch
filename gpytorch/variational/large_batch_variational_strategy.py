@@ -24,21 +24,11 @@ class QuadFormDiagonal(torch.autograd.Function):
 
         :return: The quadratic form diagonal of size `(..., N)`.
         """
-        product = matrix @ rhs
-
-        # The backward pass does not need `matrix`
-        ctx.save_for_backward(rhs, product)
-
-        return torch.sum(rhs * product, dim=-2)
+        pass
 
     @staticmethod
     def backward(ctx, d_diag: Tensor):
-        rhs, product = ctx.saved_tensors
-
-        d_matrix = rhs @ (d_diag.unsqueeze(-1) * rhs.mT)
-        d_rhs = 2.0 * product * d_diag.unsqueeze(-2)
-
-        return d_matrix, d_rhs
+        pass
 
 
 class LargeBatchVariationalStrategy(VariationalStrategy):
@@ -61,11 +51,7 @@ class LargeBatchVariationalStrategy(VariationalStrategy):
 
     def _clear_cache(self) -> None:
         # Clear cached inference terms before calling parent's _clear_cache
-        if hasattr(self, "_cached_inv_chol_t_inducing_values"):
-            del self._cached_inv_chol_t_inducing_values
-        if hasattr(self, "_cached_middle_term"):
-            del self._cached_middle_term
-        super()._clear_cache()
+        pass
 
     def _compute_predictive_updates(
         self,
@@ -76,50 +62,4 @@ class LargeBatchVariationalStrategy(VariationalStrategy):
         prior_covar: LinearOperator,
         diag: bool = True,
     ) -> tuple[Tensor, LinearOperator]:
-        dtype = induc_data_covar.dtype
-
-        # Make `K_ZZ^{-1/2}` dense because `TriangularLinearOperator` does not support solve with `left=False`.
-        chol = chol.to_dense().type(torch.float64)
-
-        induc_data_covar = induc_data_covar.type(torch.float64)
-        inducing_values = inducing_values.type(torch.float64)
-
-        # The mean update `k_XZ K_ZZ^{-1/2} (m - K_ZZ^{-1/2} \mu_Z)`
-        # Cache inv_chol_t_inducing_values and middle_term during inference (not training)
-        # since they don't depend on the data (through induc_data_covar)
-        if not self.training and hasattr(self, "_cached_inv_chol_t_inducing_values"):
-            inv_chol_t_inducing_values = self._cached_inv_chol_t_inducing_values
-        else:
-            inv_chol_t_inducing_values = torch.linalg.solve_triangular(
-                chol.mT, inducing_values.unsqueeze(-1), upper=True, left=True
-            )
-            if not self.training:
-                self._cached_inv_chol_t_inducing_values = inv_chol_t_inducing_values
-
-        mean_update = (induc_data_covar.mT @ inv_chol_t_inducing_values).squeeze(-1).type(dtype)
-
-        # The grouped middle term `K_ZZ^{-1/2} (S - I) K_ZZ^{-1/2}`
-        if not self.training and hasattr(self, "_cached_middle_term"):
-            middle_term = self._cached_middle_term
-        else:
-            middle_term = prior_covar.mul(-1).to_dense()
-            if variational_inducing_covar is not None:
-                middle_term = variational_inducing_covar.to_dense() + middle_term
-            middle_term = middle_term.type(torch.float64)
-
-            middle_term = torch.linalg.solve_triangular(chol, middle_term, upper=False, left=False)
-            middle_term = torch.linalg.solve_triangular(chol.mT, middle_term, upper=True, left=True)
-            if not self.training:
-                self._cached_middle_term = middle_term
-
-        # The covariance update `K_XZ K_ZZ^{-1/2} (S - I) K_ZZ^{-1/2} K_ZX`
-        if diag and self.training:
-            # The custom autograd function has a faster backward pass, but it doesn't compute the off-diagonal entries.
-            variance_update = QuadFormDiagonal.apply(middle_term, induc_data_covar)
-            covar_update = DiagLinearOperator(diag=variance_update.type(dtype))
-        else:
-            covar_update = MatmulLinearOperator(
-                induc_data_covar.mT.type(dtype), (middle_term @ induc_data_covar).type(dtype)
-            )
-
-        return mean_update, covar_update
+        pass

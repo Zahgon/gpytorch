@@ -76,11 +76,11 @@ class LinearKernel(Kernel):
 
     @property
     def variance(self) -> Tensor:
-        return self.raw_variance_constraint.transform(self.raw_variance)
+        pass
 
     @variance.setter
     def variance(self, value: float | Tensor) -> None:
-        self._set_variance(value)
+        pass
 
     def _set_variance(self, value: float | Tensor) -> None:
         if not torch.is_tensor(value):
@@ -90,27 +90,7 @@ class LinearKernel(Kernel):
     def forward(
         self, x1: Tensor, x2: Tensor, diag: bool = False, last_dim_is_batch: bool | None = False, **params
     ) -> Tensor | LinearOperator:
-        x1_ = x1 * self.variance.sqrt()
-        if last_dim_is_batch:
-            x1_ = x1_.transpose(-1, -2).unsqueeze(-1)
-
-        if x1.size() == x2.size() and torch.equal(x1, x2):
-            # Use RootLinearOperator when x1 == x2 for efficiency when composing
-            # with other kernels
-            n, d = x1.shape[-2:]
-            prod = RootLinearOperator(x1_) if d > n else LowRankRootLinearOperator(x1_)
-
-        else:
-            x2_ = x2 * self.variance.sqrt()
-            if last_dim_is_batch:
-                x2_ = x2_.transpose(-1, -2).unsqueeze(-1)
-
-            prod = MatmulLinearOperator(x1_, x2_.transpose(-2, -1))
-
-        if diag:
-            return prod.diagonal(dim1=-1, dim2=-2)
-        else:
-            return prod
+        pass
 
     def prediction_strategy(self, train_inputs, train_prior_dist, train_labels, likelihood):
         # Allow for fast sampling

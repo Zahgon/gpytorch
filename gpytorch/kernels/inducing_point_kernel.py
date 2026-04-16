@@ -43,81 +43,27 @@ class InducingPointKernel(Kernel):
         self.register_added_loss_term("inducing_point_loss_term")
 
     def _clear_cache(self):
-        if hasattr(self, "_cached_kernel_mat"):
-            del self._cached_kernel_mat
-        if hasattr(self, "_cached_kernel_inv_root"):
-            del self._cached_kernel_inv_root
+        pass
 
     @property
     def _inducing_mat(self):
-        if not self.training and hasattr(self, "_cached_kernel_mat"):
-            return self._cached_kernel_mat
-        else:
-            res = to_dense(self.base_kernel(self.inducing_points, self.inducing_points))
-            if not self.training:
-                self._cached_kernel_mat = res
-            return res
+        pass
 
     @property
     def _inducing_inv_root(self):
-        if not self.training and hasattr(self, "_cached_kernel_inv_root"):
-            return self._cached_kernel_inv_root
-        else:
-            chol = psd_safe_cholesky(self._inducing_mat, upper=True)
-            eye = torch.eye(chol.size(-1), device=chol.device, dtype=chol.dtype)
-            inv_root = torch.linalg.solve_triangular(chol, eye, upper=True)
-
-            res = inv_root
-            if not self.training:
-                self._cached_kernel_inv_root = res
-            return res
+        pass
 
     def _get_covariance(self, x1, x2):
-        k_ux1 = to_dense(self.base_kernel(x1, self.inducing_points))
-        if torch.equal(x1, x2):
-            covar = LowRankRootLinearOperator(k_ux1.matmul(self._inducing_inv_root))
-
-            # Diagonal correction for predictive posterior
-            if not self.training and settings.sgpr_diagonal_correction.on():
-                correction = (self.base_kernel(x1, x2, diag=True) - covar.diagonal(dim1=-1, dim2=-2)).clamp(0, math.inf)
-                covar = LowRankRootAddedDiagLinearOperator(covar, DiagLinearOperator(correction))
-        else:
-            k_ux2 = to_dense(self.base_kernel(x2, self.inducing_points))
-            covar = MatmulLinearOperator(
-                k_ux1.matmul(self._inducing_inv_root), k_ux2.matmul(self._inducing_inv_root).transpose(-1, -2)
-            )
-
-        return covar
+        pass
 
     def _covar_diag(self, inputs):
-        if inputs.ndimension() == 1:
-            inputs = inputs.unsqueeze(1)
-
-        # Get diagonal of covar
-        covar_diag = to_dense(self.base_kernel(inputs, diag=True))
-        return DiagLinearOperator(covar_diag)
+        pass
 
     def forward(self, x1, x2, diag=False, **kwargs):
-        covar = self._get_covariance(x1, x2)
-
-        if self.training:
-            if not torch.equal(x1, x2):
-                raise RuntimeError("x1 should equal x2 in training mode")
-            zero_mean = torch.zeros_like(x1.select(-1, 0))
-            new_added_loss_term = InducingPointKernelAddedLossTerm(
-                MultivariateNormal(zero_mean, self._covar_diag(x1)),
-                MultivariateNormal(zero_mean, covar),
-                self.likelihood,
-            )
-            self.update_added_loss_term("inducing_point_loss_term", new_added_loss_term)
-
-        if diag:
-            return covar.diagonal(dim1=-1, dim2=-2)
-        else:
-            return covar
+        pass
 
     def num_outputs_per_input(self, x1, x2):
-        return self.base_kernel.num_outputs_per_input(x1, x2)
+        pass
 
     def __deepcopy__(self, memo):
         replace_inv_root = False

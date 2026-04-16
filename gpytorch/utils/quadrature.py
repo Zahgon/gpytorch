@@ -20,8 +20,7 @@ def _pad_with_singletons(obj: torch.Tensor, num_singletons_before: int = 0, num_
         >>> _pad_width_singletons(x, 2, 3).shape
         >>> # [1, 1, 10, 5, 1, 1, 1]
     """
-    new_shape = [1] * num_singletons_before + list(obj.shape) + [1] * num_singletons_after
-    return obj.view(*new_shape)
+    pass
 
 
 class GaussHermiteQuadrature1D(Module):
@@ -74,16 +73,4 @@ class GaussHermiteQuadrature1D(Module):
         Returns:
             - Result of integrating func against each univariate Gaussian in gaussian_dists.
         """
-        means = gaussian_dists.mean
-        variances = gaussian_dists.variance
-
-        locations = _pad_with_singletons(self.locations, num_singletons_before=0, num_singletons_after=means.dim())
-
-        shifted_locs = torch.sqrt(2.0 * variances) * locations + means
-        log_probs = func(shifted_locs)
-        weights = _pad_with_singletons(self.weights, num_singletons_before=0, num_singletons_after=log_probs.dim() - 1)
-
-        res = (1 / math.sqrt(math.pi)) * (log_probs * weights)
-        res = res.sum(tuple(range(self.locations.dim())))
-
-        return res
+        pass

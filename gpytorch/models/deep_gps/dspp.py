@@ -112,5 +112,4 @@ class DSPP(DeepGP):
 
     @property
     def quad_weights(self):
-        qwd = self.raw_quad_weights
-        return qwd - qwd.logsumexp(dim=-1)
+        pass
